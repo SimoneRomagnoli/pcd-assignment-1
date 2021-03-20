@@ -75,14 +75,14 @@ public class GUI {
         this.resLabel = new JLabel("Results:");
         this.resLabel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.025), (int)(WIDTH*0.5), (int)(HEIGHT*0.1));
         this.results = new JTextArea("");
-        this.results.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.5), (int)(HEIGHT*0.8));
+        this.results.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.35), (int)(HEIGHT*0.5));
         this.frame.add(this.resLabel);
         this.frame.add(this.results);
     }
 
     private void createStartButton() {
         this.start = new JButton("Start");
-        this.start.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.9), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
+        this.start.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.start.addActionListener(e -> {
             Controller.CONTROLLER.setDirectory(this.pdfDirectory.getText());
             Controller.CONTROLLER.setIgnored(this.excludeWords.getText());
