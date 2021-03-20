@@ -36,10 +36,11 @@ public class OccurrencesCounter extends Thread {
                 for(String page:pages) {
                     count(filter(split(page)));
                 }
-
+                wait(20);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
         }
     }
 

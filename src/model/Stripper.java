@@ -39,7 +39,17 @@ public class Stripper extends Thread {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            } else {
+                try {
+                    wait(20);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
+    }
+
+    public boolean hasFinished() {
+        return this.state.equals(StripperState.FINISHED);
     }
 }

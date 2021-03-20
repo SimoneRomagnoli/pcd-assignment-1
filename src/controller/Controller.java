@@ -73,6 +73,9 @@ public class Controller {
         }
 
         while(true) {
+            if(strippers.stream().allMatch(Stripper::hasFinished)) {
+                System.out.println("FINISHED");
+            }
             this.gui.pushResults(occurrencesMonitor.getOccurrences());
         }
     }
