@@ -57,11 +57,13 @@ public class Controller {
 
         System.out.println("Merged");
 
+        // il documento non lo chiudiamo mai e da warning
         final RawPagesMonitor rawPagesMonitor = new RawPagesMonitor(mergedFiles);
         final StrippedPagesMonitor strippedPagesMonitor = new StrippedPagesMonitor();
         final OccurrencesMonitor occurrencesMonitor = new OccurrencesMonitor(this.words);
 
         final OccurrencesCounter occurrencesCounter = new OccurrencesCounter(strippedPagesMonitor, occurrencesMonitor, ignoredWords);
+        //perchè qui?
         occurrencesCounter.start();
 
         List<Stripper> strippers = new ArrayList<>();
@@ -72,12 +74,31 @@ public class Controller {
             stripper.start();
         }
 
-        while(true) {
-            if(strippers.stream().allMatch(Stripper::hasFinished)) {
-                System.out.println("FINISHED");
-            }
-            this.gui.pushResults(occurrencesMonitor.getOccurrences());
-        }
+
+
+        // Qui dovremmo controllare che anche l' occurrencesCounter abbia finito
+        // Forse la soluzione migliore sarebbe mettere il wait il controller, facendolo risvegliare dall'
+        // occurrencesCounter una volta che:
+        //  1) abbia verificato che tutti i producer siano FINISH
+        //  2) abbia terminato il suo task
+
+        // il risvolto negativo è che in questo modo non è più possibile continuare ad aggiornare la gui
+        // dal controller
+
+
+        // Questo busy waiting orrendo, ma almeno funziona...
+        while(!strippers.stream().allMatch(Stripper::hasFinished)){};
+        System.out.println("FINISHED");
+        this.gui.pushResults(occurrencesMonitor.getOccurrences());
+
+
+//        while(true) {
+//            if(strippers.stream().allMatch(Stripper::hasFinished)) {
+//
+//                // Qui il programma dovrebbe terminare, invece rimane all'interno del ciclo all'infinito
+//            }
+//            this.gui.pushResults(occurrencesMonitor.getOccurrences());
+//        }
     }
 
 }

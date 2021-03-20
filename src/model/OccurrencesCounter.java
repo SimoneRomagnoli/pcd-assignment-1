@@ -36,7 +36,8 @@ public class OccurrencesCounter extends Thread {
                 for(String page:pages) {
                     count(filter(split(page)));
                 }
-                wait(20);
+                // A cosa serve qui? Commentata perchè tirava eccezione
+                //wait(20);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
