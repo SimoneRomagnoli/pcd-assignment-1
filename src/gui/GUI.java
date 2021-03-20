@@ -1,6 +1,8 @@
 package gui;
 
 import controller.Controller;
+import model.OccurrencesCounter;
+import model.OccurrencesMonitor;
 
 import javax.swing.*;
 import java.awt.*;
@@ -89,6 +91,7 @@ public class GUI {
             Controller.CONTROLLER.setWords(Integer.parseInt(this.numberOfWords.getText()));
             try {
                 Controller.CONTROLLER.startComputation();
+
             } catch (IOException | InterruptedException ioException) {
                 ioException.printStackTrace();
             }

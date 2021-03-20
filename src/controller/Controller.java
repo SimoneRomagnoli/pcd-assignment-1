@@ -1,11 +1,10 @@
 package controller;
 
 import gui.GUI;
-import model.OccurrencesMonitor;
-import model.Worker;
+import model.*;
+import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
-import org.apache.pdfbox.text.PDFTextStripper;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,120 +42,39 @@ public class Controller {
     }
 
     public void startComputation() throws IOException, InterruptedException {
-        long programStart = System.currentTimeMillis();
 
         File pdfDir = new File(directory);
         List<String> ignoredWords = new ArrayList<>();
         ignoredWords.addAll(Files.readAllLines(Path.of(ignored)));
 
-        long stripTime = 0;
-        long splitTime = 0;
-        long filterTime = 0;
-        long countTime = 0;
-
-
-        Map<String, Integer> occ = new HashMap<>();
-
+        PDFMergerUtility merger = new PDFMergerUtility();
         for (File f : Objects.requireNonNull(pdfDir.listFiles())) {
-            PDDocument document = PDDocument.load(f);
-            AccessPermission ap = document.getCurrentAccessPermission();
-            if (!ap.canExtractContent()) {
-                throw new IOException("You do not have permission to extract text");
-            }
-            for(int page = 1; page <= document.getNumberOfPages(); page++) {
-                //STRIP
-                long stripStart = System.currentTimeMillis();
-                PDFTextStripper stripper = new PDFTextStripper();
-                stripper.setSortByPosition(true);
-                stripper.setStartPage(page);
-                stripper.setEndPage(page);
-                String text = stripper.getText(document);
-                stripTime += System.currentTimeMillis()-stripStart;
+            merger.addSource(f);
+        }
+        merger.setDestinationFileName("merge.pdf");
+        merger.mergeDocuments(null);
+        File mergedFiles = new File("merge.pdf");
 
-                //SPLIT
-                long splitStart = System.currentTimeMillis();
-                String[] splittedText = text.split("\\s+|(?=\\p{Punct})|(?<=\\p{Punct})");
-                splitTime += System.currentTimeMillis()-splitStart;
+        System.out.println("Merged");
 
-                //FILTER
-                long filterStart = System.currentTimeMillis();
-                List<String> filteredText = Arrays.stream(splittedText).filter(w -> !ignoredWords.contains(w)).collect(Collectors.toList());
-                filterTime += System.currentTimeMillis()-filterStart;
+        final RawPagesMonitor rawPagesMonitor = new RawPagesMonitor(mergedFiles);
+        final StrippedPagesMonitor strippedPagesMonitor = new StrippedPagesMonitor();
+        final OccurrencesMonitor occurrencesMonitor = new OccurrencesMonitor(this.words);
 
-                //COUNT
-                long countStart = System.currentTimeMillis();
-                List<String> wordsBuffer = new ArrayList<>();
-                wordsBuffer.addAll(filteredText);
-                for(String word: wordsBuffer) {
-                    if(occ.containsKey(word)) {
-                        occ.replace(word, occ.get(word)+1);
-                    } else {
-                        occ.put(word, 1);
-                    }
-                }
-                countTime += System.currentTimeMillis()-countStart;
-            }
-            document.close();
+        final OccurrencesCounter occurrencesCounter = new OccurrencesCounter(strippedPagesMonitor, occurrencesMonitor, ignoredWords);
+        occurrencesCounter.start();
+
+        List<Stripper> strippers = new ArrayList<>();
+        int threads = Runtime.getRuntime().availableProcessors();
+        for(int i = 0; i < threads; i++) {
+            final Stripper stripper = new Stripper(rawPagesMonitor, strippedPagesMonitor);
+            strippers.add(stripper);
+            stripper.start();
         }
 
-        System.out.println("Program finished; here are the times:");
-        System.out.println("Strip time: "+stripTime+" ms.");
-        System.out.println("Split time: "+splitTime+" ms.");
-        System.out.println("Filter time: "+filterTime+" ms.");
-        System.out.println("Count time: "+countTime+" ms.");
-
-        //final long readStart = System.currentTimeMillis();
-        //System.out.print("Time for reading pdf: ");
-
-        /*
-        for (File f : Objects.requireNonNull(pdfDir.listFiles())) {
-            final long readStart = System.currentTimeMillis();
-            System.out.print("Time for input-reading: ");
-            PDDocument document = PDDocument.load(f);
-            AccessPermission ap = document.getCurrentAccessPermission();
-            if (!ap.canExtractContent()) {
-                throw new IOException("You do not have permission to extract text");
-            }
-
-            PDFTextStripper stripper = new PDFTextStripper();
-            stripper.setSortByPosition(true);
-            stripper.setStartPage(1);
-            stripper.setEndPage(document.getNumberOfPages());
-            String myText = stripper.getText(document);
-            System.out.println(System.currentTimeMillis() - readStart + " ms");
-
-            //this is a critical section
-            //List<String> text = Arrays.stream(stripper.getText(document).split("\\s+|(?=\\p{Punct})|(?<=\\p{Punct})")).collect(Collectors.toList());
-            wordsBuffer.addAll(Arrays.stream(myText.split("\\s+|(?=\\p{Punct})|(?<=\\p{Punct})")).collect(Collectors.toList()));
-            document.close();
+        while(true) {
+            this.gui.pushResults(occurrencesMonitor.getOccurrences());
         }
-
-
-        //System.out.println(System.currentTimeMillis() - readStart + " ms");
-
-        Worker w1 = new Worker(0, monitor, wordsBuffer.subList(0, wordsBuffer.size()/2), ignoredWords);
-        Worker w2 = new Worker(1, monitor, wordsBuffer.subList(wordsBuffer.size()/2+1, wordsBuffer.size()-1), ignoredWords);
-
-        w1.start();
-        w2.start();
-
-        w1.join();
-        w2.join();
-        */
-
-        long orderStart = System.currentTimeMillis();
-        Map<String, Integer> orderedOccurrences = occ
-                .keySet()
-                .stream()
-                .sorted((a, b) -> occ.get(b) - occ.get(a))
-                .limit(words)
-                .collect(Collectors.toMap(k -> k,k -> occ.get(k)));
-        System.out.println("Order time: "+(System.currentTimeMillis()-orderStart)+" ms.");
-        System.out.println("Program time: "+(System.currentTimeMillis()-programStart)+" ms.");
-
-        this.gui.pushResults(orderedOccurrences);
-        //System.out.println(occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).limit(words).collect(Collectors.toList()));
-
     }
 
 }
