@@ -49,11 +49,68 @@ public class Controller {
         List<String> ignoredWords = new ArrayList<>();
         ignoredWords.addAll(Files.readAllLines(Path.of(ignored)));
 
-        List<String> wordsBuffer = new ArrayList<>();
+        long stripTime = 0;
+        long splitTime = 0;
+        long filterTime = 0;
+        long countTime = 0;
 
+
+        Map<String, Integer> occ = new HashMap<>();
+
+        for (File f : Objects.requireNonNull(pdfDir.listFiles())) {
+            PDDocument document = PDDocument.load(f);
+            AccessPermission ap = document.getCurrentAccessPermission();
+            if (!ap.canExtractContent()) {
+                throw new IOException("You do not have permission to extract text");
+            }
+            for(int page = 1; page <= document.getNumberOfPages(); page++) {
+                PDFTextStripper stripper = new PDFTextStripper();
+                stripper.setSortByPosition(true);
+                stripper.setStartPage(page);
+                stripper.setEndPage(page);
+
+                List<String> wordsBuffer = new ArrayList<>();
+
+                //STRIP
+                long stripStart = System.currentTimeMillis();
+                String text = stripper.getText(document);
+                stripTime += System.currentTimeMillis()-stripStart;
+
+                //SPLIT
+                long splitStart = System.currentTimeMillis();
+                String[] splittedText = text.split("\\s+|(?=\\p{Punct})|(?<=\\p{Punct})");
+                splitTime += System.currentTimeMillis()-splitStart;
+
+                //FILTER
+                long filterStart = System.currentTimeMillis();
+                List<String> filteredText = Arrays.stream(splittedText).filter(w -> !ignoredWords.contains(w)).collect(Collectors.toList());
+                filterTime += System.currentTimeMillis()-filterStart;
+
+                //COUNT
+                long countStart = System.currentTimeMillis();
+                wordsBuffer.addAll(filteredText);
+                for(String word: wordsBuffer) {
+                    if(occ.containsKey(word)) {
+                        occ.replace(word, occ.get(word)+1);
+                    } else {
+                        occ.put(word, 1);
+                    }
+                }
+                countTime += System.currentTimeMillis()-countStart;
+            }
+            document.close();
+        }
+
+        System.out.println("Program finished; here are the times:");
+        System.out.println("Strip time: "+stripTime+" ms.");
+        System.out.println("Split time: "+splitTime+" ms.");
+        System.out.println("Filter time: "+filterTime+" ms.");
+        System.out.println("Count time: "+countTime+" ms.");
+        
         //final long readStart = System.currentTimeMillis();
         //System.out.print("Time for reading pdf: ");
 
+        /*
         for (File f : Objects.requireNonNull(pdfDir.listFiles())) {
             final long readStart = System.currentTimeMillis();
             System.out.print("Time for input-reading: ");
@@ -76,6 +133,7 @@ public class Controller {
             document.close();
         }
 
+
         //System.out.println(System.currentTimeMillis() - readStart + " ms");
 
         Worker w1 = new Worker(0, monitor, wordsBuffer.subList(0, wordsBuffer.size()/2), ignoredWords);
@@ -86,16 +144,16 @@ public class Controller {
 
         w1.join();
         w2.join();
-
+        */
         Map<String, Integer> occurrences = monitor.getOccurrences();
 
         this.gui.pushResults(
-                        occurrences
+                        occ
                         .keySet()
                         .stream()
-                        .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
+                        .sorted((a, b) -> occ.get(b) - occ.get(a))
                         .limit(words)
-                        .collect(Collectors.toMap(k -> k,k -> occurrences.get(k)))
+                        .collect(Collectors.toMap(k -> k,k -> occ.get(k)))
         );
 
 
