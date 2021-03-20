@@ -43,7 +43,7 @@ public class Controller {
     }
 
     public void startComputation() throws IOException, InterruptedException {
-        OccurrencesMonitor monitor = new OccurrencesMonitor();
+        long programStart = System.currentTimeMillis();
 
         File pdfDir = new File(directory);
         List<String> ignoredWords = new ArrayList<>();
@@ -64,15 +64,12 @@ public class Controller {
                 throw new IOException("You do not have permission to extract text");
             }
             for(int page = 1; page <= document.getNumberOfPages(); page++) {
+                //STRIP
+                long stripStart = System.currentTimeMillis();
                 PDFTextStripper stripper = new PDFTextStripper();
                 stripper.setSortByPosition(true);
                 stripper.setStartPage(page);
                 stripper.setEndPage(page);
-
-                List<String> wordsBuffer = new ArrayList<>();
-
-                //STRIP
-                long stripStart = System.currentTimeMillis();
                 String text = stripper.getText(document);
                 stripTime += System.currentTimeMillis()-stripStart;
 
@@ -88,6 +85,7 @@ public class Controller {
 
                 //COUNT
                 long countStart = System.currentTimeMillis();
+                List<String> wordsBuffer = new ArrayList<>();
                 wordsBuffer.addAll(filteredText);
                 for(String word: wordsBuffer) {
                     if(occ.containsKey(word)) {
@@ -106,7 +104,7 @@ public class Controller {
         System.out.println("Split time: "+splitTime+" ms.");
         System.out.println("Filter time: "+filterTime+" ms.");
         System.out.println("Count time: "+countTime+" ms.");
-        
+
         //final long readStart = System.currentTimeMillis();
         //System.out.print("Time for reading pdf: ");
 
@@ -145,18 +143,18 @@ public class Controller {
         w1.join();
         w2.join();
         */
-        Map<String, Integer> occurrences = monitor.getOccurrences();
 
-        this.gui.pushResults(
-                        occ
-                        .keySet()
-                        .stream()
-                        .sorted((a, b) -> occ.get(b) - occ.get(a))
-                        .limit(words)
-                        .collect(Collectors.toMap(k -> k,k -> occ.get(k)))
-        );
+        long orderStart = System.currentTimeMillis();
+        Map<String, Integer> orderedOccurrences = occ
+                .keySet()
+                .stream()
+                .sorted((a, b) -> occ.get(b) - occ.get(a))
+                .limit(words)
+                .collect(Collectors.toMap(k -> k,k -> occ.get(k)));
+        System.out.println("Order time: "+(System.currentTimeMillis()-orderStart)+" ms.");
+        System.out.println("Program time: "+(System.currentTimeMillis()-programStart)+" ms.");
 
-
+        this.gui.pushResults(orderedOccurrences);
         //System.out.println(occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).limit(words).collect(Collectors.toList()));
 
     }
