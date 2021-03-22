@@ -30,9 +30,13 @@ public class RawPagesMonitor {
         this.document = Optional.of(doc);
         this.workload = workload;
         this.consumed = START;
+        notifyAll();
     }
 
-    public synchronized String getText() throws IOException {
+    public synchronized String getText() throws IOException, InterruptedException {
+        while(this.document.isEmpty()) {
+            wait();
+        }
         PDDocument doc = document.get();
         final int firstPage = workload * consumed + 1;
         this.stripper.setStartPage(firstPage);

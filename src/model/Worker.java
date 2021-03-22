@@ -32,7 +32,7 @@ public class Worker extends Thread {
                         count(filter(split(text)));
                         this.state = WorkerState.WAITING;
                     }
-                } catch (IOException e) {
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             } else {

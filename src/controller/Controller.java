@@ -71,6 +71,16 @@ public class Controller {
                 rawPagesMonitor.setDocument(document, workload);
                 workers.forEach(Worker::strip);
             }
+
+            /*
+            *       CARO MATTE, IL PROGRAMMA FUNZIONA SOLO A VOLTE.
+            *       IL PROBLEMA E' CHE NON SI SINCRONIZZANO BENE I WORKER ALLA FINE,
+            *       CIOE' IL CONTROLLER NON PUO' CHIAMARE LA terminate() SE LORO NON HANNO FINITO LE LORO COMPUTAZIONI.
+            *       QUINDI BISOGNA TROVARE UN MODO DI FARLI FINIRE PER BENE USANDO MONITOR O SEMAPHORES.
+            *
+            *       GRAZIE PER LA PAZIENZA,
+            *       SR
+            * */
             workers.forEach(Worker::terminate);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -78,7 +88,7 @@ public class Controller {
 
 
         // Questo busy waiting orrendo, ma almeno funziona...
-        while(!workers.stream().allMatch(Worker::hasFinished)){};
+        while(!workers.stream().allMatch(Worker::hasFinished)){}
         System.out.println("Total time: "+(System.currentTimeMillis()-start)+" ms.");
         this.gui.pushResults(occurrencesMonitor.getOccurrences());
 
