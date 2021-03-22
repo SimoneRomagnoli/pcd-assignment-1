@@ -1,5 +1,5 @@
 package model;
 
 public enum StripperState {
-    STRIPPING, FINISHED
+    STRIPPING, WAITING, FINISHED;
 }

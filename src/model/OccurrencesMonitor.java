@@ -13,7 +13,7 @@ public class OccurrencesMonitor {
         this.limit = limit;
     }
 
-    public synchronized void writeOccurrence(Map<String, Integer> occ) {
+    public void writeOccurrence(Map<String, Integer> occ) {
         occ.keySet().stream().forEach(k -> {
             if(occurrences.containsKey(k)) {
                 occurrences.replace(k, this.occurrences.get(k)+occ.get(k));
@@ -23,7 +23,7 @@ public class OccurrencesMonitor {
         });
     }
 
-    public synchronized Map<String, Integer> getOccurrences() {
+    public Map<String, Integer> getOccurrences() {
         return this.occurrences
                 .keySet()
                 .stream()
