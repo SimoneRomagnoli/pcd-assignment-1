@@ -40,13 +40,14 @@ public class RawPagesMonitor {
         }
         final int firstPage = this.workload * this.consumed++;
         final int lastPage = Math.min(firstPage+this.workload, document.get().getNumberOfPages());
+        PDDocument doc = this.document.get();
         if(lastPage >= document.get().getNumberOfPages()) {
             this.document = Optional.empty();
             notify();
         }
         this.stripper.setStartPage(firstPage);
         this.stripper.setEndPage(lastPage);
-        return new StripWrapper(this.stripper, this.document.get());
+        return new StripWrapper(this.stripper, doc);
     }
 
 }
