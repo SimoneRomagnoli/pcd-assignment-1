@@ -1,19 +1,21 @@
 package gui;
 
 import controller.Controller;
+import model.Model;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class GUI {
+public class View extends JFrame implements ActionListener, ModelObserver {
 
     private static final int WIDTH = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2;
     private static final int HEIGHT = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight()/2;
 
-    private final JFrame frame;
     private JLabel dirLabel;
     private JTextField pdfDirectory;
     private JLabel excLabel;
@@ -22,11 +24,12 @@ public class GUI {
     private JTextField numberOfWords;
     private JLabel resLabel;
     private JTextArea results;
-
     private JButton start;
 
-    public GUI() {
-        this.frame = new JFrame("Assignment-1");
+    private Controller controller;
+
+    public View(Controller controller) {
+        super("View");
 
         this.createDirectoryInput();
         this.createExcludedInput();
@@ -34,11 +37,32 @@ public class GUI {
         this.createResultsOutput();
         this.createStartButton();
 
-        frame.setSize(WIDTH, HEIGHT);
-        frame.setLayout(null);
-        frame.setVisible(true);
+        this.setSize(WIDTH, HEIGHT);
+        this.setLayout(null);
+        this.setVisible(true);
 
-        Controller.CONTROLLER.setGui(this);
+        this.controller = controller;
+    }
+
+    @Override
+    public void modelUpdated(Map<String, Integer> occurrences) {
+        this.results.setText("");
+        for(String word:occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
+            String t = this.results.getText();
+            SwingUtilities.invokeLater(() -> {
+                this.results.setText(t+word+" - "+occurrences.get(word)+" times \n");
+            });
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ev) {
+        try {
+            this.controller.setModelArgs(this.pdfDirectory.getText(), this.excludeWords.getText(), this.numberOfWords.getText());
+            this.controller.processEvent(ev.getActionCommand());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void createDirectoryInput() {
@@ -47,8 +71,8 @@ public class GUI {
         this.pdfDirectory = new JTextField(10);
         this.pdfDirectory.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.1), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
         this.pdfDirectory.setText("./prova/");
-        this.frame.add(this.dirLabel);
-        this.frame.add(this.pdfDirectory);
+        this.add(this.dirLabel);
+        this.add(this.pdfDirectory);
     }
 
     private void createExcludedInput() {
@@ -57,8 +81,8 @@ public class GUI {
         this.excludeWords = new JTextField(10);
         this.excludeWords.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.3), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
         this.excludeWords.setText("./exclude.txt");
-        this.frame.add(this.excLabel);
-        this.frame.add(this.excludeWords);
+        this.add(this.excLabel);
+        this.add(this.excludeWords);
     }
 
     private void createWordsInput() {
@@ -67,8 +91,8 @@ public class GUI {
         this.numberOfWords = new JTextField(10);
         this.numberOfWords.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.5), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
         this.numberOfWords.setText("5");
-        this.frame.add(this.wordsLabel);
-        this.frame.add(this.numberOfWords);
+        this.add(this.wordsLabel);
+        this.add(this.numberOfWords);
     }
 
     private void createResultsOutput() {
@@ -76,32 +100,14 @@ public class GUI {
         this.resLabel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.025), (int)(WIDTH*0.5), (int)(HEIGHT*0.1));
         this.results = new JTextArea("");
         this.results.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.35), (int)(HEIGHT*0.5));
-        this.frame.add(this.resLabel);
-        this.frame.add(this.results);
+        this.add(this.resLabel);
+        this.add(this.results);
     }
 
     private void createStartButton() {
-        this.start = new JButton("Start");
+        this.start = new JButton(Model.START);
         this.start.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
-        this.start.addActionListener(e -> {
-            Controller.CONTROLLER.setDirectory(this.pdfDirectory.getText());
-            Controller.CONTROLLER.setIgnored(this.excludeWords.getText());
-            Controller.CONTROLLER.setWords(Integer.parseInt(this.numberOfWords.getText()));
-            try {
-                Controller.CONTROLLER.startComputation();
-
-            } catch (IOException | InterruptedException ioException) {
-                ioException.printStackTrace();
-            }
-        });
-        this.frame.add(this.start);
-    }
-
-    public void pushResults(Map<String, Integer> occurrences) {
-        this.results.setText("");
-        for(String word:occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
-            String t = this.results.getText();
-            this.results.setText(t+word+" - "+occurrences.get(word)+" times \n");
-        }
+        this.start.addActionListener(this);
+        this.add(this.start);
     }
 }

@@ -10,45 +10,28 @@ public class Worker extends Thread {
 
     private final RawPagesMonitor rawPagesMonitor;
     private final OccurrencesMonitor occurrencesMonitor;
+    private final StateMonitor workerMonitor;
     private final List<String> ignoredWords;
 
-    private WorkerState state;
-
-
-    public Worker(RawPagesMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, List<String> ignoredWords) throws IOException {
+    public Worker(RawPagesMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor workerMonitor, List<String> ignoredWords) throws IOException {
         this.rawPagesMonitor = rawPagesMonitor;
         this.occurrencesMonitor = occurrencesMonitor;
+        this.workerMonitor = workerMonitor;
         this.ignoredWords = new ArrayList<>(ignoredWords);
-        this.state = WorkerState.WAITING;
     }
 
     @Override
     public void run() {
-        while(!this.state.equals(WorkerState.FINISHED)) {
-            if(this.state.equals(WorkerState.STRIPPING)) {
-                try {
-                    synchronized (this) {
-                        final String text = rawPagesMonitor.getText();
-                        count(filter(split(text)));
-                        this.state = WorkerState.WAITING;
-                    }
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
+        while(this.workerMonitor.isWorking()) {
+            try {
+                synchronized (this) {
+                    final String text = rawPagesMonitor.getText();
+                    count(filter(split(text)));
                 }
-            } else {
-                try {
-                    synchronized (this) {
-                        wait(10);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
         }
-    }
-
-    public boolean hasFinished() {
-        return this.state.equals(WorkerState.FINISHED);
     }
 
     private String[] split(String page) {
@@ -69,13 +52,5 @@ public class Worker extends Thread {
             }
         }
         this.occurrencesMonitor.writeOccurrence(occurrences);
-    }
-
-    public synchronized void terminate() {
-        this.state = WorkerState.FINISHED;
-    }
-
-    public synchronized void strip() {
-        this.state = WorkerState.STRIPPING;
     }
 }

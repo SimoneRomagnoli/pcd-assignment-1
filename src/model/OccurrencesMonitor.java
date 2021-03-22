@@ -7,10 +7,8 @@ import java.util.stream.Collectors;
 public class OccurrencesMonitor {
 
     private Map<String, Integer> occurrences = new HashMap<>();
-    private final int limit;
 
-    public OccurrencesMonitor(int limit) {
-        this.limit = limit;
+    public OccurrencesMonitor() {
     }
 
     public void writeOccurrence(Map<String, Integer> occ) {
@@ -24,11 +22,6 @@ public class OccurrencesMonitor {
     }
 
     public Map<String, Integer> getOccurrences() {
-        return this.occurrences
-                .keySet()
-                .stream()
-                .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
-                .limit(this.limit)
-                .collect(Collectors.toMap(k -> k, k -> occurrences.get(k)));
+        return this.occurrences;
     }
 }
