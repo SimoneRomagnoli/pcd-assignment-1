@@ -109,11 +109,12 @@ public class Model {
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
-            //System.out.println("Total time: " + (System.currentTimeMillis() - start) + " ms.");
 
             for (Worker worker : this.workers) {
                 worker.join();
             }
+            System.out.println("Total time: " + (System.currentTimeMillis() - start) + " ms.");
+
             notifyObservers();
         }
     }
