@@ -20,6 +20,11 @@ public class StateMonitor {
         return this.state.equals(State.FINISHED);
     }
 
+    public synchronized boolean isPaused() {
+        return this.state.equals(State.PAUSED);
+    }
+
+
     public synchronized void start() {
         this.state = State.STARTED;
     }

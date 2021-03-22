@@ -22,14 +22,25 @@ public class Worker extends Thread {
 
     @Override
     public void run() {
-        while(this.workerMonitor.isWorking()) {
-            try {
-                synchronized (this) {
-                    final String text = rawPagesMonitor.getText();
-                    count(filter(split(text)));
+        while(!this.workerMonitor.isFinished()) {
+            if(this.workerMonitor.isWorking()) {
+                try {
+                    synchronized (this) {
+                        final String text = rawPagesMonitor.getText();
+                        count(filter(split(text)));
+                    }
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+            }
+            if(this.workerMonitor.isPaused()) {
+                try {
+                    synchronized (this) {
+                        Thread.sleep(100);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

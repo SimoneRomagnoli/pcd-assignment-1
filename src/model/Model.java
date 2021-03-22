@@ -20,10 +20,14 @@ public class Model {
     public static final String PAUSE = "PAUSE";
     public static final String STOP = "STOP";
 
+    public static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
+
     private List<ModelObserver> observers;
     private File pdfDirectory;
     private List<String> ignoredWords;
     private int limitWords;
+
+    List<Worker> workers;
 
     private final RawPagesMonitor rawPagesMonitor;
     private final StateMonitor stateMonitor;
@@ -36,6 +40,10 @@ public class Model {
         this.rawPagesMonitor = new RawPagesMonitor();
         this.occurrencesMonitor = new OccurrencesMonitor();
         this.stateMonitor = new StateMonitor();
+        this.workers = new ArrayList<>();
+        for (int i = 0; i < AVAILABLE_PROCESSORS; i++) {
+            workers.add(new Worker(rawPagesMonitor, occurrencesMonitor, stateMonitor, ignoredWords));
+        }
     }
 
     public synchronized void update(String event){
@@ -79,16 +87,8 @@ public class Model {
         this.limitWords = Integer.parseInt(limitWords);
     }
 
-    public void execute() throws IOException {
+    public void execute() throws InterruptedException {
         if(this.stateMonitor.isWorking()) {
-            List<Worker> workers = new ArrayList<>();
-            int threads = Runtime.getRuntime().availableProcessors();
-            for (int i = 0; i < threads; i++) {
-                final Worker stripper = new Worker(rawPagesMonitor, occurrencesMonitor, stateMonitor, ignoredWords);
-                workers.add(stripper);
-            }
-            System.out.println("Threads: " + threads + ".");
-
             final long start = System.currentTimeMillis();
             try {
                 workers.forEach(Worker::start);
@@ -105,13 +105,16 @@ public class Model {
 
                     this.rawPagesMonitor.setDocument(document, workload);
                 }
-                this.stateMonitor.stop();
+                this.stateMonitor.finish();
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
-
             //System.out.println("Total time: " + (System.currentTimeMillis() - start) + " ms.");
+
+            for (Worker worker : this.workers) {
+                worker.join();
+            }
+            notifyObservers();
         }
-        notifyObservers();
     }
 }

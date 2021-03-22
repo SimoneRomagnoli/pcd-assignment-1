@@ -57,7 +57,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
             //SwingUtilities.invokeLater(() -> {
                 this.results.setText(t+word+" - "+occurrences.get(word)+" times \n");
             //});
-            System.out.println(t+word+" - "+occurrences.get(word)+" times \n");
+
         }
     }
 
