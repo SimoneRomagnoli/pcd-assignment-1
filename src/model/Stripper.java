@@ -29,14 +29,11 @@ public class Stripper extends Thread {
     public void run() {
         while(!this.state.equals(StripperState.FINISHED)) {
             if(this.state.equals(StripperState.STRIPPING)) {
-                try {
-                    StripWrapper sw = rawPagesMonitor.getStripper();
-                    String text = sw.getText();
+                
+                    String text = rawPagesMonitor.getText();
                     count(filter(split(text)));
                     this.state = StripperState.WAITING;
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
+
             } else {
                 try {
                     wait(10);

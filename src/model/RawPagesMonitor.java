@@ -34,20 +34,8 @@ public class RawPagesMonitor {
         notifyAll();
     }
 
-    public synchronized StripWrapper getStripper() throws InterruptedException {
-        while(this.document.isEmpty()) {
-            wait();
-        }
-        final int firstPage = this.workload * this.consumed++;
-        final int lastPage = Math.min(firstPage+this.workload, document.get().getNumberOfPages());
-        PDDocument doc = this.document.get();
-        if(lastPage >= document.get().getNumberOfPages()) {
-            this.document = Optional.empty();
-            notify();
-        }
-        this.stripper.setStartPage(firstPage);
-        this.stripper.setEndPage(lastPage);
-        return new StripWrapper(this.stripper, doc);
+    public synchronized String getText() {
+        return "";
     }
 
 }
