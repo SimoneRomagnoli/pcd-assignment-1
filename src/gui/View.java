@@ -16,6 +16,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     private static final int WIDTH = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2;
     private static final int HEIGHT = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight()/2;
 
+    private JPanel panel;
     private JLabel dirLabel;
     private JTextField pdfDirectory;
     private JLabel excLabel;
@@ -31,6 +32,8 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     public View(Controller controller) {
         super("View");
 
+        this.panel = new JPanel();
+
         this.createDirectoryInput();
         this.createExcludedInput();
         this.createWordsInput();
@@ -38,8 +41,10 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.createStartButton();
 
         this.setSize(WIDTH, HEIGHT);
-        this.setLayout(null);
+        setResizable(false);
+        this.setLayout(new BorderLayout());
         this.setVisible(true);
+        add(panel, BorderLayout.EAST);
 
         this.controller = controller;
     }
@@ -49,9 +54,10 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.results.setText("");
         for(String word:occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
             String t = this.results.getText();
-            SwingUtilities.invokeLater(() -> {
+            //SwingUtilities.invokeLater(() -> {
                 this.results.setText(t+word+" - "+occurrences.get(word)+" times \n");
-            });
+            //});
+            System.out.println(t+word+" - "+occurrences.get(word)+" times \n");
         }
     }
 
@@ -100,8 +106,8 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.resLabel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.025), (int)(WIDTH*0.5), (int)(HEIGHT*0.1));
         this.results = new JTextArea("");
         this.results.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.35), (int)(HEIGHT*0.5));
-        this.add(this.resLabel);
-        this.add(this.results);
+        this.panel.add(this.resLabel);
+        this.panel.add(this.results);
     }
 
     private void createStartButton() {

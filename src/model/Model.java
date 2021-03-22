@@ -105,7 +105,7 @@ public class Model {
 
                     this.rawPagesMonitor.setDocument(document, workload);
                 }
-                this.stateMonitor.finish();
+                this.stateMonitor.stop();
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
