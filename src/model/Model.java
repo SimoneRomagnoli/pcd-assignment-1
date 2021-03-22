@@ -41,9 +41,6 @@ public class Model {
         this.occurrencesMonitor = new OccurrencesMonitor();
         this.stateMonitor = new StateMonitor();
         this.workers = new ArrayList<>();
-        for (int i = 0; i < AVAILABLE_PROCESSORS; i++) {
-            workers.add(new Worker(rawPagesMonitor, occurrencesMonitor, stateMonitor, ignoredWords));
-        }
     }
 
     public synchronized void update(String event){
@@ -91,6 +88,9 @@ public class Model {
         if(this.stateMonitor.isWorking()) {
             final long start = System.currentTimeMillis();
             try {
+                for (int i = 0; i < AVAILABLE_PROCESSORS; i++) {
+                    workers.add(new Worker(rawPagesMonitor, occurrencesMonitor, stateMonitor, ignoredWords));
+                }
                 workers.forEach(Worker::start);
                 for (File f : Objects.requireNonNull(this.pdfDirectory.listFiles())) {
                     PDDocument document = PDDocument.load(f);
