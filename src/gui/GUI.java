@@ -1,8 +1,6 @@
 package gui;
 
 import controller.Controller;
-import model.OccurrencesCounter;
-import model.OccurrencesMonitor;
 
 import javax.swing.*;
 import java.awt.*;

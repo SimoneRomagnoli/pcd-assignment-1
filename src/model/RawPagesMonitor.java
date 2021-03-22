@@ -3,13 +3,12 @@ package model;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
 public class RawPagesMonitor {
 
-    private static final int EMPTY = 0;
+    private static final int START = 0;
 
     private Optional<PDDocument> document;
     private final PDFTextStripper stripper;
@@ -20,8 +19,8 @@ public class RawPagesMonitor {
         this.document = Optional.empty();
         this.stripper = new PDFTextStripper();
         this.stripper.setSortByPosition(true);
-        this.workload = EMPTY;
-        this.consumed = EMPTY;
+        this.workload = START;
+        this.consumed = START;
     }
 
     public synchronized void setDocument(final PDDocument doc, final int workload) throws InterruptedException {
@@ -30,12 +29,23 @@ public class RawPagesMonitor {
         }
         this.document = Optional.of(doc);
         this.workload = workload;
-        this.consumed = EMPTY;
-        notifyAll();
+        this.consumed = START;
     }
 
-    public synchronized String getText() {
-        return "";
+    public synchronized String getText() throws IOException {
+        PDDocument doc = document.get();
+        final int firstPage = workload * consumed + 1;
+        this.stripper.setStartPage(firstPage);
+        consumed++;
+        final int lastPage = workload * consumed;
+        if(lastPage >= doc.getNumberOfPages()) {
+            this.stripper.setEndPage(doc.getNumberOfPages());
+            this.document = Optional.empty();
+            notifyAll();
+        } else {
+            this.stripper.setEndPage(lastPage);
+        }
+        return this.stripper.getText(doc);
     }
 
 }

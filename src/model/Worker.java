@@ -1,13 +1,10 @@
 package model;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Stripper extends Thread {
+public class Worker extends Thread {
 
     private static final String REGEX = "\\s+|(?=\\p{Punct})|(?<=\\p{Punct})";
 
@@ -15,28 +12,34 @@ public class Stripper extends Thread {
     private final OccurrencesMonitor occurrencesMonitor;
     private final List<String> ignoredWords;
 
-    private StripperState state;
+    private WorkerState state;
 
 
-    public Stripper(RawPagesMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, List<String> ignoredWords) throws IOException {
+    public Worker(RawPagesMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, List<String> ignoredWords) throws IOException {
         this.rawPagesMonitor = rawPagesMonitor;
         this.occurrencesMonitor = occurrencesMonitor;
         this.ignoredWords = new ArrayList<>(ignoredWords);
-        this.state = StripperState.STRIPPING;
+        this.state = WorkerState.WAITING;
     }
 
     @Override
     public void run() {
-        while(!this.state.equals(StripperState.FINISHED)) {
-            if(this.state.equals(StripperState.STRIPPING)) {
-                
-                    String text = rawPagesMonitor.getText();
-                    count(filter(split(text)));
-                    this.state = StripperState.WAITING;
-
+        while(!this.state.equals(WorkerState.FINISHED)) {
+            if(this.state.equals(WorkerState.STRIPPING)) {
+                try {
+                    synchronized (this) {
+                        final String text = rawPagesMonitor.getText();
+                        count(filter(split(text)));
+                        this.state = WorkerState.WAITING;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             } else {
                 try {
-                    wait(10);
+                    synchronized (this) {
+                        wait(10);
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -45,7 +48,7 @@ public class Stripper extends Thread {
     }
 
     public boolean hasFinished() {
-        return this.state.equals(StripperState.FINISHED);
+        return this.state.equals(WorkerState.FINISHED);
     }
 
     private String[] split(String page) {
@@ -68,11 +71,11 @@ public class Stripper extends Thread {
         this.occurrencesMonitor.writeOccurrence(occurrences);
     }
 
-    public void terminate() {
-        this.state = StripperState.FINISHED;
+    public synchronized void terminate() {
+        this.state = WorkerState.FINISHED;
     }
 
-    public void strip() {
-        this.state = StripperState.STRIPPING;
+    public synchronized void strip() {
+        this.state = WorkerState.STRIPPING;
     }
 }
