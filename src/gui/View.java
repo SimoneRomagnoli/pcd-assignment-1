@@ -63,6 +63,12 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     }
 
     @Override
+    public void finalUpdate() {
+        this.stop.setEnabled(false);
+        this.start.setEnabled(false);
+    }
+
+    @Override
     public void actionPerformed(ActionEvent ev) {
         try {
             Object source = ev.getSource();

@@ -14,7 +14,13 @@ public class RawPagesMonitor {
     private final PDFTextStripper stripper;
     private int workload;
     private int threadID;
-    private boolean allPageConsumed;
+    private boolean documentFinished;
+
+    /*
+         Monitor that handle only one PDF at a time,
+         dividing equally between the workers the number of pages
+     */
+
 
     public RawPagesMonitor() throws IOException {
         this.document = Optional.empty();
@@ -22,50 +28,55 @@ public class RawPagesMonitor {
         this.stripper.setSortByPosition(true);
         this.workload = START;
         this.threadID = START;
-        this.allPageConsumed = false;
     }
 
     public synchronized void setDocument(final PDDocument doc, final int workload) throws InterruptedException {
-        // Il rawPages gestisce un documento alla volta
         while(this.document.isPresent()) {
+            System.out.println("[MASTER]: in wait");
             wait();
+            System.out.println("[MASTER]: awoken from wait");
         }
-        this.allPageConsumed = false;
+        System.out.println("[MASTER]: deposit of a new document");
         this.document = Optional.of(doc);
         this.workload = workload;
         this.threadID = START;
         notifyAll();
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized String getText() throws IOException, InterruptedException {
-        while(this.document.isEmpty()) {
+        while(this.document.isEmpty() && !documentFinished) {
+            System.out.println("[WORKER]: in wait");
             wait();
+            if(documentFinished) System.out.println("[WORKER]: awoken from wait");
         }
-        PDDocument doc = document.get();
-        final int firstPage = workload * threadID + 1;
-        this.stripper.setStartPage(firstPage);
-        // Perche' ogni thread lavora su una sottoporzione del documento
-        threadID++;
-        // ad esempio se workload = 10 , il thread i-esimo lavora sulll'insieme di pagine (10*i - 10*(i+1))
-        final int lastPage = workload * threadID;
-        // se sono l'ultimo thread a lavorare sul documento
-        if(lastPage >= doc.getNumberOfPages()) {
-            this.stripper.setEndPage(doc.getNumberOfPages());
-            this.document = Optional.empty();
-            System.out.println("[WORKER]: I am finishing a PDF");
-            // sveglio il master che potrebbe essere in attesa di depositare una nuova pagina
-            this.allPageConsumed = true;
-            notifyAll();
+        //I need to process the last pdf until is empty
+        if(!(document.isEmpty() && documentFinished)) {
+            PDDocument doc = document.get();
+            final int firstPage = workload * threadID + 1;
+            this.stripper.setStartPage(firstPage);
+            threadID++;
+            final int lastPage = workload * threadID;
+            if (lastPage >= doc.getNumberOfPages()) {
+                System.out.println("One document elaborated");
+                this.stripper.setEndPage(doc.getNumberOfPages());
+                this.document = Optional.empty();
+                //In order to awake the master
+                notifyAll();
 
-        } else {
-            this.stripper.setEndPage(lastPage);
+            } else {
+                this.stripper.setEndPage(lastPage);
+            }
+            return this.stripper.getText(doc);
         }
-        return this.stripper.getText(doc);
+        return null;
     }
 
-    public synchronized boolean allPagesConsumed() {
-        return this.allPageConsumed;
+    // Method called by the model when the PDF are finished.
+    // Set the flag documentFinished and awake all the threads from their wait, letting them
+    // finish the getText method (returning null).
+    public synchronized void documentsFinished(){
+        this.documentFinished = true;
+        notifyAll();
     }
 
 }

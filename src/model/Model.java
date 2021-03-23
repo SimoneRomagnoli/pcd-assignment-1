@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 
 public class Model {
 
-    private List<ModelObserver> observers;
-    private Queue<File> documents;
-    private List<String> ignoredWords;
+    private final List<ModelObserver> observers;
+    private final Queue<File> documents;
+    private final List<String> ignoredWords;
     private int limitWords;
 
     List<Worker> workers;
@@ -23,7 +23,7 @@ public class Model {
     private final RawPagesMonitor rawPagesMonitor;
     private final StateMonitor stateMonitor;
 
-    private OccurrencesMonitor occurrencesMonitor;
+    private final OccurrencesMonitor occurrencesMonitor;
 
     public Model() throws IOException {
         this.observers = new ArrayList<>();
@@ -49,32 +49,30 @@ public class Model {
                         ? document.getNumberOfPages() / workers.size()
                         : document.getNumberOfPages() / workers.size() + 1;
 
-                // in order to make both the instruction atomically
-                synchronized(this){
-                    // If the queue is empty I set the flag in order to await for worker's termination
-                    if (documents.isEmpty()) {
-                        this.stateMonitor.setWaitingForTermination();
-                    }
-
-                    this.rawPagesMonitor.setDocument(document, workload);
-                }
+                this.rawPagesMonitor.setDocument(document, workload);
 
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
+            System.out.println("[MASTER]: send to all workers the command for the termination");
 
-            System.out.println("[MASTER]: waiting for dead workers");
+            this.stateMonitor.setWaitingForTermination();
+            this.rawPagesMonitor.documentsFinished();
+
 
             for(Worker w : workers){
                 w.join();
             }
 
             stateMonitor.setFinish();
+            //here we need to disable all the buttons
+            observers.get(0).finalUpdate();
 
         }
-        System.out.println("[MASTER]: I will now update the GUI");
+        System.out.println("[MASTER]: updating the  GUI");
         notifyObservers();
+
     }
 
 
@@ -103,7 +101,7 @@ public class Model {
                                 .stream()
                                 .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
                                 .limit(this.limitWords)
-                                .collect(Collectors.toMap(k -> k, k -> occurrences.get(k))));
+                                .collect(Collectors.toMap(k -> k, occurrences::get)));
         }
     }
 

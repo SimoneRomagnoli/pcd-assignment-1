@@ -12,12 +12,12 @@ import java.awt.event.*;
  */
 public class CounterGUI extends JFrame implements ActionListener {
 
-	private JButton start;
-	private JButton stop;
-	private JButton reset;
-	private JTextField display;
+	private final JButton start;
+	private final JButton stop;
+	private final JButton reset;
+	private final JTextField display;
 	
-	private Controller controller;
+	private final Controller controller;
 	
 	public CounterGUI(Controller contr, int initialValue){
 		setTitle("Counter GUI");
@@ -93,15 +93,11 @@ public class CounterGUI extends JFrame implements ActionListener {
 	}
 
 	public void updateCountValue(int value) {
-		SwingUtilities.invokeLater(()-> {
-			display.setText("" + value);
-		});
+		SwingUtilities.invokeLater(()-> display.setText("" + value));
 	}
 
 	public void display() {
-        javax.swing.SwingUtilities.invokeLater(() -> {
-        	this.setVisible(true);
-        });
+        javax.swing.SwingUtilities.invokeLater(() -> this.setVisible(true));
     }
 	
 	

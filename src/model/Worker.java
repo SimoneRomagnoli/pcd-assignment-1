@@ -20,30 +20,39 @@ public class Worker extends Thread {
         this.ignoredWords = new ArrayList<>(ignoredWords);
     }
 
-    @Override
+//    @Override
+//    public void run() {
+//        // The worker terminates when the state is "WaitingForTermination" and all the pages in the RawPagesMonitor are elaborated.
+//        while(!(this.stateMonitor.isWaitingForTermination() && this.rawPagesMonitor.allPagesConsumed())) {
+//            if(this.stateMonitor.isStopped()) {
+//                try {
+//                        Thread.sleep(100);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            } else {
+//                try {
+//                        final String text = rawPagesMonitor.getText();
+//                        count(filter(split(text)));
+//                } catch (IOException | InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+
+//    }
+
     public void run() {
-        // The worker terminates when the state is "WaitingForTermination" and all the pages in the RawPagesMonitor are elaborated.
-        while(!(this.stateMonitor.isWaitingForTermination() && this.rawPagesMonitor.allPagesConsumed())) {
-            System.out.println("[WORKER]: Let's see what shall I do");
-            if(this.stateMonitor.isStopped()) {
-                try {
-                    synchronized (this) {
-                        Thread.sleep(100);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                try {
-                    synchronized (this) {
-                        final String text = rawPagesMonitor.getText();
-                        count(filter(split(text)));
-                    }
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
+//        // The worker terminates when the state is "WaitingForTermination" and all the pages in the RawPagesMonitor are elaborated.
+        while (!(this.stateMonitor.isWaitingForTermination())) {
+            try {
+                    final String text = rawPagesMonitor.getText();
+                    if(text!= null) count(filter(split(text)));
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
         }
+        System.out.println("[WORKER]: terminated");
     }
 
     private String[] split(String page) {
