@@ -7,7 +7,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -15,6 +14,9 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     private static final int WIDTH = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2;
     private static final int HEIGHT = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight()/2;
+
+    public static final String START = "START";
+    public static final String STOP = "STOP";
 
     private JPanel panel;
     private JLabel dirLabel;
@@ -26,8 +28,11 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     private JLabel resLabel;
     private JTextArea results;
     private JButton start;
+    private JButton stop;
 
     private Controller controller;
+
+    private int modUp = 0;
 
     public View(Controller controller) {
         super("View");
@@ -39,6 +44,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.createWordsInput();
         this.createResultsOutput();
         this.createStartButton();
+        this.createStopButton();
 
         this.setSize(WIDTH, HEIGHT);
         setResizable(false);
@@ -51,21 +57,35 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     @Override
     public void modelUpdated(Map<String, Integer> occurrences) {
-        this.results.setText("");
+        modUp++;
+        System.out.println("GUI notified "+modUp+" times.");
+        String acc = "";
         for(String word:occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
-            String t = this.results.getText();
-            //SwingUtilities.invokeLater(() -> {
-                this.results.setText(t+word+" - "+occurrences.get(word)+" times \n");
-            //});
-
+            acc += word+" - "+occurrences.get(word)+" times \n";
         }
+        final String finalAcc = acc;
+        SwingUtilities.invokeLater(() -> {
+            this.results.setText(finalAcc);
+        });
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
         try {
-            this.controller.setModelArgs(this.pdfDirectory.getText(), this.excludeWords.getText(), this.numberOfWords.getText());
-            this.controller.processEvent(ev.getActionCommand());
+            Object source = ev.getSource();
+            if (this.start.equals(source)) {
+                this.controller.notifyStart(this.pdfDirectory.getText(), this.excludeWords.getText(), this.numberOfWords.getText());
+                this.start.setEnabled(false);
+                this.stop.setEnabled(true);
+                this.pdfDirectory.setEnabled(false);
+                this.excludeWords.setEnabled(false);
+                this.numberOfWords.setEnabled(false);
+            }
+            if (this.stop.equals(source)) {
+                this.controller.notifyStop();
+                this.stop.setEnabled(false);
+                this.start.setEnabled(true);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -111,9 +131,17 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     }
 
     private void createStartButton() {
-        this.start = new JButton(Model.START);
+        this.start = new JButton(START);
         this.start.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.start.addActionListener(this);
         this.add(this.start);
+    }
+
+    private void createStopButton() {
+        this.stop = new JButton(STOP);
+        this.stop.setBounds((int)(HEIGHT*0.6), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
+        this.stop.addActionListener(this);
+        this.stop.setEnabled(false);
+        this.add(this.stop);
     }
 }

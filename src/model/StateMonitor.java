@@ -3,7 +3,7 @@ package model;
 public class StateMonitor {
 
     enum State {
-        WAITING, STARTED, PAUSED, STOPPED, FINISHED
+        WAITING, STARTED, STOPPED, FINISHED
     }
 
     private State state;
@@ -20,17 +20,12 @@ public class StateMonitor {
         return this.state.equals(State.FINISHED);
     }
 
-    public synchronized boolean isPaused() {
-        return this.state.equals(State.PAUSED);
+    public synchronized boolean isStopped() {
+        return this.state.equals(State.STOPPED);
     }
-
 
     public synchronized void start() {
         this.state = State.STARTED;
-    }
-
-    public synchronized void pause() {
-        this.state = State.PAUSED;
     }
 
     public synchronized void stop() {

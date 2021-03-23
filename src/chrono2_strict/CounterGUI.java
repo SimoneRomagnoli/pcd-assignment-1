@@ -1,4 +1,4 @@
-package pcd.lab04.gui.chrono2_strict;
+package chrono2_strict;
 
 import javax.swing.*;
 import java.awt.*;

@@ -33,7 +33,7 @@ public class Worker extends Thread {
                     e.printStackTrace();
                 }
             }
-            if(this.workerMonitor.isPaused()) {
+            if(this.workerMonitor.isStopped()) {
                 try {
                     synchronized (this) {
                         Thread.sleep(100);

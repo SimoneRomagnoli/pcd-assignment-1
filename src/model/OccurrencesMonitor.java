@@ -11,7 +11,7 @@ public class OccurrencesMonitor {
     public OccurrencesMonitor() {
     }
 
-    public void writeOccurrence(Map<String, Integer> occ) {
+    public synchronized void writeOccurrence(Map<String, Integer> occ) {
         occ.keySet().stream().forEach(k -> {
             if(occurrences.containsKey(k)) {
                 occurrences.replace(k, this.occurrences.get(k)+occ.get(k));
@@ -21,7 +21,7 @@ public class OccurrencesMonitor {
         });
     }
 
-    public Map<String, Integer> getOccurrences() {
+    public synchronized Map<String, Integer> getOccurrences() {
         return this.occurrences;
     }
 }

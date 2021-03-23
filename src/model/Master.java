@@ -1,6 +1,5 @@
 package model;
 
-
 public class Master extends Thread {
     private Model model;
 
@@ -10,13 +9,14 @@ public class Master extends Thread {
 
     public void run(){
         while (!this.model.getState().isFinished()) {
-            if(this.model.getState().isWorking()) {
-                try {
+            try {
+                if (this.model.getState().isWorking()) {
                     model.update();
-                    Thread.sleep(50);
-                } catch (Exception ex) {
                 }
+                Thread.sleep(50);
+            } catch (Exception ex) {
             }
+
         }
     }
 }

@@ -8,22 +8,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Model {
 
-    public static final String START = "START";
-    public static final String PAUSE = "PAUSE";
-    public static final String STOP = "STOP";
-
-    public static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
-
     private List<ModelObserver> observers;
-    private File pdfDirectory;
+    private Queue<File> documents;
     private List<String> ignoredWords;
     private int limitWords;
 
@@ -41,45 +32,51 @@ public class Model {
         this.occurrencesMonitor = new OccurrencesMonitor();
         this.stateMonitor = new StateMonitor();
         this.workers = new ArrayList<>();
+        this.documents = new ArrayDeque<>();
     }
 
-    public synchronized void update() throws InterruptedException {
-        if(this.stateMonitor.isWorking()) {
-            final long start = System.currentTimeMillis();
-            try {
-                for (int i = 0; i < AVAILABLE_PROCESSORS; i++) {
-                    workers.add(new Worker(rawPagesMonitor, occurrencesMonitor, stateMonitor, ignoredWords));
-                }
-                workers.forEach(Worker::start);
-                for (File f : Objects.requireNonNull(this.pdfDirectory.listFiles())) {
-                    PDDocument document = PDDocument.load(f);
-                    AccessPermission ap = document.getCurrentAccessPermission();
-                    if (!ap.canExtractContent()) {
-                        throw new IOException("You do not have permission to extract text");
-                    }
-                    System.out.println("File: " + f.getName() + " with " + document.getNumberOfPages() + " pages.");
-                    int workload = document.getNumberOfPages() % workers.size() == 0
-                            ? document.getNumberOfPages() / workers.size()
-                            : document.getNumberOfPages() / workers.size() + 1;
-
-                    this.rawPagesMonitor.setDocument(document, workload);
-                }
-                this.stateMonitor.finish();
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+    public void update() throws InterruptedException {
+        try {
+            File f = documents.poll();
+            PDDocument document = PDDocument.load(f);
+            AccessPermission ap = document.getCurrentAccessPermission();
+            if (!ap.canExtractContent()) {
+                throw new IOException("You do not have permission to extract text");
             }
+            System.out.println("File: " + f.getName() + " with " + document.getNumberOfPages() + " pages.");
+            int workload = document.getNumberOfPages() % workers.size() == 0
+                    ? document.getNumberOfPages() / workers.size()
+                    : document.getNumberOfPages() / workers.size() + 1;
 
+            this.rawPagesMonitor.setDocument(document, workload);
+
+            if(documents.isEmpty()) {
+                this.stateMonitor.finish();
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if(this.stateMonitor.isFinished()) {
             for (Worker worker : this.workers) {
                 worker.join();
             }
-            System.out.println("Total time: " + (System.currentTimeMillis() - start) + " ms.");
-
-            notifyObservers();
         }
+
+        notifyObservers();
+
     }
 
-    public synchronized StateMonitor getState() {
+    public StateMonitor getState() {
         return this.stateMonitor;
+    }
+
+    public void start() {
+        this.stateMonitor.start();
+    }
+
+    public void stop() {
+        this.stateMonitor.stop();
     }
 
     public void addObserver(ModelObserver obs){
@@ -87,6 +84,7 @@ public class Model {
     }
 
     private void notifyObservers(){
+        System.out.println("GUI notified one time.");
         for (ModelObserver obs: observers) {
             Map<String, Integer> occurrences = occurrencesMonitor.getOccurrences();
             obs.modelUpdated(occurrences
@@ -99,12 +97,19 @@ public class Model {
     }
 
     public void setArgs(final String pdfDirectoryName, final String ignoredWordsFileName, final String limitWords) throws IOException {
-        this.pdfDirectory = new File(pdfDirectoryName);
+        File pdfDirectory = new File(pdfDirectoryName);
+        this.documents.addAll(Arrays.asList(Objects.requireNonNull(pdfDirectory.listFiles())));
         this.ignoredWords.addAll(Files.readAllLines(Path.of(ignoredWordsFileName)));
         this.limitWords = Integer.parseInt(limitWords);
     }
 
-    public void execute() throws InterruptedException {
-
+    public void createWorkers(final int n) throws IOException {
+        if(this.workers.isEmpty()) {
+            for (int i = 0; i < n; i++) {
+                workers.add(new Worker(this.rawPagesMonitor, this.occurrencesMonitor, this.stateMonitor, this.ignoredWords));
+            }
+            this.workers.forEach(Worker::start);
+        }
     }
+
 }
