@@ -17,7 +17,6 @@ public class Model {
     private Queue<File> documents;
     private List<String> ignoredWords;
     private int limitWords;
-    private boolean computationFinished;
 
     List<Worker> workers;
 
@@ -34,7 +33,6 @@ public class Model {
         this.stateMonitor = new StateMonitor();
         this.workers = new ArrayList<>();
         this.documents = new ArrayDeque<>();
-        this.computationFinished = false;
     }
 
     public void update() throws InterruptedException {
@@ -51,39 +49,46 @@ public class Model {
                         ? document.getNumberOfPages() / workers.size()
                         : document.getNumberOfPages() / workers.size() + 1;
 
-                if(this.documents.isEmpty()) {
-                    this.stateMonitor.pdfTerminated();
+                // in order to make both the instruction atomically
+                synchronized(this){
+                    // If the queue is empty I set the flag in order to await for worker's termination
+                    if (documents.isEmpty()) {
+                        this.stateMonitor.setWaitingForTermination();
+                    }
+
+                    this.rawPagesMonitor.setDocument(document, workload);
                 }
 
-                this.rawPagesMonitor.setDocument(document, workload);
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
 
             System.out.println("[MASTER]: waiting for dead workers");
-            if(this.stateMonitor.getDeadWorkers() == this.workers.size()) {
-                this.computationFinished = true;
+
+            for(Worker w : workers){
+                w.join();
             }
+
+            stateMonitor.setFinish();
+
         }
         System.out.println("[MASTER]: I will now update the GUI");
         notifyObservers();
     }
+
+
 
     public StateMonitor getState() {
         return this.stateMonitor;
     }
 
     public void start() {
-        this.stateMonitor.start();
+        this.stateMonitor.setActive();
     }
 
     public void stop() {
-        this.stateMonitor.stop();
-    }
-
-    public boolean hasFinished() {
-        return this.computationFinished;
+        this.stateMonitor.setStop();
     }
 
     public void addObserver(ModelObserver obs){

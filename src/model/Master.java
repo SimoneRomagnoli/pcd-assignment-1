@@ -8,8 +8,9 @@ public class Master extends Thread {
     }
 
     public void run(){
-        while (!this.model.hasFinished()) {
+        while (!this.model.getState().isFinished()) {
             try {
+                // Always update the model while not STOPPED
                 if (!this.model.getState().isStopped()) {
                     model.update();
                 }

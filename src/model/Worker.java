@@ -22,7 +22,8 @@ public class Worker extends Thread {
 
     @Override
     public void run() {
-        while(!this.stateMonitor.areDocumentsTerminated()) {
+        // The worker terminates when the state is "WaitingForTermination" and all the pages in the RawPagesMonitor are elaborated.
+        while(!(this.stateMonitor.isWaitingForTermination() && this.rawPagesMonitor.allPagesConsumed())) {
             System.out.println("[WORKER]: Let's see what shall I do");
             if(this.stateMonitor.isStopped()) {
                 try {
@@ -42,9 +43,6 @@ public class Worker extends Thread {
                     e.printStackTrace();
                 }
             }
-        }
-        synchronized (this) {
-            this.stateMonitor.workerDeath();
         }
     }
 
