@@ -43,48 +43,7 @@ public class Model {
         this.workers = new ArrayList<>();
     }
 
-    public synchronized void update(String event){
-        switch (event) {
-            case START:
-                this.stateMonitor.start();
-                break;
-            case PAUSE:
-                this.stateMonitor.pause();
-                break;
-            case STOP:
-                this.stateMonitor.stop();
-                break;
-        }
-        notifyObservers();
-    }
-
-    public synchronized StateMonitor getState() {
-        return this.stateMonitor;
-    }
-
-    public void addObserver(ModelObserver obs){
-        observers.add(obs);
-    }
-
-    private void notifyObservers(){
-        for (ModelObserver obs: observers) {
-            Map<String, Integer> occurrences = occurrencesMonitor.getOccurrences();
-            obs.modelUpdated(occurrences
-                                .keySet()
-                                .stream()
-                                .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
-                                .limit(this.limitWords)
-                                .collect(Collectors.toMap(k -> k, k -> occurrences.get(k))));
-        }
-    }
-
-    public void setArgs(final String pdfDirectoryName, final String ignoredWordsFileName, final String limitWords) throws IOException {
-        this.pdfDirectory = new File(pdfDirectoryName);
-        this.ignoredWords.addAll(Files.readAllLines(Path.of(ignoredWordsFileName)));
-        this.limitWords = Integer.parseInt(limitWords);
-    }
-
-    public void execute() throws InterruptedException {
+    public synchronized void update() throws InterruptedException {
         if(this.stateMonitor.isWorking()) {
             final long start = System.currentTimeMillis();
             try {
@@ -117,5 +76,35 @@ public class Model {
 
             notifyObservers();
         }
+    }
+
+    public synchronized StateMonitor getState() {
+        return this.stateMonitor;
+    }
+
+    public void addObserver(ModelObserver obs){
+        observers.add(obs);
+    }
+
+    private void notifyObservers(){
+        for (ModelObserver obs: observers) {
+            Map<String, Integer> occurrences = occurrencesMonitor.getOccurrences();
+            obs.modelUpdated(occurrences
+                                .keySet()
+                                .stream()
+                                .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
+                                .limit(this.limitWords)
+                                .collect(Collectors.toMap(k -> k, k -> occurrences.get(k))));
+        }
+    }
+
+    public void setArgs(final String pdfDirectoryName, final String ignoredWordsFileName, final String limitWords) throws IOException {
+        this.pdfDirectory = new File(pdfDirectoryName);
+        this.ignoredWords.addAll(Files.readAllLines(Path.of(ignoredWordsFileName)));
+        this.limitWords = Integer.parseInt(limitWords);
+    }
+
+    public void execute() throws InterruptedException {
+
     }
 }

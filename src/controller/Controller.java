@@ -20,7 +20,8 @@ public class Controller {
             new Thread(() -> {
                 try {
                     Thread.sleep(50);
-                    model.update(event);
+                    //model.start();
+                    //model.stop();
                 } catch (Exception ex){
                     ex.printStackTrace();
                 }
