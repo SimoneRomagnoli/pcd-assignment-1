@@ -18,7 +18,6 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     public static final String START = "START";
     public static final String STOP = "STOP";
 
-    private JPanel panel;
     private JLabel dirLabel;
     private JTextField pdfDirectory;
     private JLabel excLabel;
@@ -37,8 +36,6 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     public View(Controller controller) {
         super("View");
 
-        this.panel = new JPanel();
-
         this.createDirectoryInput();
         this.createExcludedInput();
         this.createWordsInput();
@@ -50,7 +47,6 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         setResizable(false);
         this.setLayout(new BorderLayout());
         this.setVisible(true);
-        add(panel, BorderLayout.EAST);
 
         this.controller = controller;
     }
@@ -67,6 +63,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         SwingUtilities.invokeLater(() -> {
             this.results.setText(finalAcc);
         });
+        System.out.println(finalAcc);
     }
 
     @Override
@@ -126,8 +123,9 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.resLabel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.025), (int)(WIDTH*0.5), (int)(HEIGHT*0.1));
         this.results = new JTextArea("");
         this.results.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.35), (int)(HEIGHT*0.5));
-        this.panel.add(this.resLabel);
-        this.panel.add(this.results);
+        this.add(this.resLabel);
+        this.add(this.results);
+
     }
 
     private void createStartButton() {
