@@ -31,8 +31,6 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     private Controller controller;
 
-    private int modUp = 0;
-
     public View(Controller controller) {
         super("View");
 
@@ -53,8 +51,6 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     @Override
     public void modelUpdated(Map<String, Integer> occurrences) {
-        modUp++;
-        System.out.println("GUI notified "+modUp+" times.");
         String acc = "";
         for(String word:occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
             acc += word+" - "+occurrences.get(word)+" times \n";
@@ -93,7 +89,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.dirLabel.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.025), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
         this.pdfDirectory = new JTextField(10);
         this.pdfDirectory.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.1), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
-        this.pdfDirectory.setText("./prova/");
+        this.pdfDirectory.setText("./res/");
         this.add(this.dirLabel);
         this.add(this.pdfDirectory);
     }

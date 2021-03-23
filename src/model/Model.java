@@ -36,7 +36,6 @@ public class Model {
     }
 
     public void update() throws InterruptedException {
-        //System.out.println("Entered in update");
         if(!documents.isEmpty()) {
             try {
                 File f = documents.poll();
@@ -55,9 +54,7 @@ public class Model {
                 e.printStackTrace();
             }
         } else {
-            // Ho finito i pdf da elaborare
             this.stateMonitor.pdfTerminated();
-            //Quando tutti i thread avranno finito di elaborare
             for (Worker worker : this.workers) {
                 worker.join();
             }
@@ -81,8 +78,7 @@ public class Model {
         observers.add(obs);
     }
 
-    private void notifyObservers(){
-        System.out.println("GUI notified one time.");
+    private synchronized void notifyObservers() {
         for (ModelObserver obs: observers) {
             Map<String, Integer> occurrences = occurrencesMonitor.getOccurrences();
             obs.modelUpdated(occurrences

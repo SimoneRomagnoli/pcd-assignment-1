@@ -23,8 +23,15 @@ public class Worker extends Thread {
     @Override
     public void run() {
         while(!(this.rawPagesMonitor.allPagesConsumed() && this.stateMonitor.areDocumentsTerminated())) {
-            System.out.println("worker cycle with allConsumed="+(rawPagesMonitor.allPagesConsumed()?"true":"false")+" and areDocTerminated="+(stateMonitor.areDocumentsTerminated()?"true":"false"));
-            if(this.stateMonitor.isWorking()) {
+            if(this.stateMonitor.isStopped()) {
+                try {
+                    synchronized (this) {
+                        Thread.sleep(100);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } else {
                 try {
                     synchronized (this) {
                         final String text = rawPagesMonitor.getText();
@@ -34,17 +41,7 @@ public class Worker extends Thread {
                     e.printStackTrace();
                 }
             }
-            if(this.stateMonitor.isStopped()) {
-                try {
-                    synchronized (this) {
-                        Thread.sleep(100);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
         }
-
         this.stateMonitor.computationTerminated();
     }
 
