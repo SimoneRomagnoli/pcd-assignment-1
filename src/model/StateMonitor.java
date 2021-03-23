@@ -3,7 +3,7 @@ package model;
 public class StateMonitor {
 
     enum State {
-        WAITING, STARTED, STOPPED, FINISHED
+        WAITING, STARTED, STOPPED, PDF_FINISHED, COMPUTATION_FINISHED
     }
 
     private State state;
@@ -17,7 +17,10 @@ public class StateMonitor {
     }
 
     public synchronized boolean isFinished() {
-        return this.state.equals(State.FINISHED);
+        return this.state == State.COMPUTATION_FINISHED;
+    }
+    public synchronized boolean areDocumentsTerminated() {
+        return this.state == State.PDF_FINISHED || this.state == State.COMPUTATION_FINISHED;
     }
 
     public synchronized boolean isStopped() {
@@ -32,7 +35,7 @@ public class StateMonitor {
         this.state = State.STOPPED;
     }
 
-    public synchronized void finish() {
-        this.state = State.FINISHED;
-    }
+    public synchronized void pdfTerminated() { this.state = State.PDF_FINISHED; }
+
+    public synchronized void computationTerminated() { this.state = State.COMPUTATION_FINISHED; }
 }

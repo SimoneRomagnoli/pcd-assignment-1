@@ -13,7 +13,7 @@ public class Master extends Thread {
                 if (this.model.getState().isWorking()) {
                     model.update();
                 }
-                Thread.sleep(50);
+                Thread.sleep(100);
             } catch (Exception ex) {
             }
 

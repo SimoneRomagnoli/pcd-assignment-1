@@ -52,4 +52,8 @@ public class RawPagesMonitor {
         return this.stripper.getText(doc);
     }
 
+    public synchronized boolean allPagesConsumed() {
+        return this.document.equals(Optional.empty());
+    }
+
 }

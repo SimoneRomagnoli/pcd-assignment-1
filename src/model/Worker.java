@@ -10,20 +10,21 @@ public class Worker extends Thread {
 
     private final RawPagesMonitor rawPagesMonitor;
     private final OccurrencesMonitor occurrencesMonitor;
-    private final StateMonitor workerMonitor;
+    private final StateMonitor stateMonitor;
     private final List<String> ignoredWords;
 
-    public Worker(RawPagesMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor workerMonitor, List<String> ignoredWords) throws IOException {
+    public Worker(RawPagesMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor stateMonitor, List<String> ignoredWords) throws IOException {
         this.rawPagesMonitor = rawPagesMonitor;
         this.occurrencesMonitor = occurrencesMonitor;
-        this.workerMonitor = workerMonitor;
+        this.stateMonitor = stateMonitor;
         this.ignoredWords = new ArrayList<>(ignoredWords);
     }
 
     @Override
     public void run() {
-        while(!this.workerMonitor.isFinished()) {
-            if(this.workerMonitor.isWorking()) {
+        while(!(this.rawPagesMonitor.allPagesConsumed() && this.stateMonitor.areDocumentsTerminated())) {
+            System.out.println("worker cycle with allConsumed="+(rawPagesMonitor.allPagesConsumed()?"true":"false")+" and areDocTerminated="+(stateMonitor.areDocumentsTerminated()?"true":"false"));
+            if(this.stateMonitor.isWorking()) {
                 try {
                     synchronized (this) {
                         final String text = rawPagesMonitor.getText();
@@ -33,7 +34,7 @@ public class Worker extends Thread {
                     e.printStackTrace();
                 }
             }
-            if(this.workerMonitor.isStopped()) {
+            if(this.stateMonitor.isStopped()) {
                 try {
                     synchronized (this) {
                         Thread.sleep(100);
@@ -43,6 +44,8 @@ public class Worker extends Thread {
                 }
             }
         }
+
+        this.stateMonitor.computationTerminated();
     }
 
     private String[] split(String page) {

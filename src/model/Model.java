@@ -36,35 +36,33 @@ public class Model {
     }
 
     public void update() throws InterruptedException {
-        try {
-            File f = documents.poll();
-            PDDocument document = PDDocument.load(f);
-            AccessPermission ap = document.getCurrentAccessPermission();
-            if (!ap.canExtractContent()) {
-                throw new IOException("You do not have permission to extract text");
+        //System.out.println("Entered in update");
+        if(!documents.isEmpty()) {
+            try {
+                File f = documents.poll();
+                PDDocument document = PDDocument.load(f);
+                AccessPermission ap = document.getCurrentAccessPermission();
+                if (!ap.canExtractContent()) {
+                    throw new IOException("You do not have permission to extract text");
+                }
+                System.out.println("File: " + f.getName() + " with " + document.getNumberOfPages() + " pages.");
+                int workload = document.getNumberOfPages() % workers.size() == 0
+                        ? document.getNumberOfPages() / workers.size()
+                        : document.getNumberOfPages() / workers.size() + 1;
+
+                this.rawPagesMonitor.setDocument(document, workload);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
-            System.out.println("File: " + f.getName() + " with " + document.getNumberOfPages() + " pages.");
-            int workload = document.getNumberOfPages() % workers.size() == 0
-                    ? document.getNumberOfPages() / workers.size()
-                    : document.getNumberOfPages() / workers.size() + 1;
-
-            this.rawPagesMonitor.setDocument(document, workload);
-
-            if(documents.isEmpty()) {
-                this.stateMonitor.finish();
-            }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        if(this.stateMonitor.isFinished()) {
+        } else {
+            // Ho finito i pdf da elaborare
+            this.stateMonitor.pdfTerminated();
+            //Quando tutti i thread avranno finito di elaborare
             for (Worker worker : this.workers) {
                 worker.join();
             }
         }
-
         notifyObservers();
-
     }
 
     public StateMonitor getState() {
