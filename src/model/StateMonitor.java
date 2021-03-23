@@ -7,9 +7,11 @@ public class StateMonitor {
     }
 
     private State state;
+    private int deadWorkers;
 
     public StateMonitor() {
         this.state = State.WAITING;
+        this.deadWorkers = 0;
     }
 
     public synchronized boolean isWorking() {
@@ -20,7 +22,7 @@ public class StateMonitor {
         return this.state == State.COMPUTATION_FINISHED;
     }
     public synchronized boolean areDocumentsTerminated() {
-        return this.state == State.PDF_FINISHED || this.state == State.COMPUTATION_FINISHED;
+        return this.state == State.PDF_FINISHED;
     }
 
     public synchronized boolean isStopped() {
@@ -38,4 +40,8 @@ public class StateMonitor {
     public synchronized void pdfTerminated() { this.state = State.PDF_FINISHED; }
 
     public synchronized void computationTerminated() { this.state = State.COMPUTATION_FINISHED; }
+
+    public synchronized void workerDeath() { this.deadWorkers = this.deadWorkers + 1; }
+
+    public synchronized int getDeadWorkers() { return this.deadWorkers; }
 }

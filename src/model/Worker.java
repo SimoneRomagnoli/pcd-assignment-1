@@ -22,7 +22,8 @@ public class Worker extends Thread {
 
     @Override
     public void run() {
-        while(!(this.rawPagesMonitor.allPagesConsumed() && this.stateMonitor.areDocumentsTerminated())) {
+        while(!this.stateMonitor.areDocumentsTerminated()) {
+            System.out.println("[WORKER]: Let's see what shall I do");
             if(this.stateMonitor.isStopped()) {
                 try {
                     synchronized (this) {
@@ -42,7 +43,9 @@ public class Worker extends Thread {
                 }
             }
         }
-        this.stateMonitor.computationTerminated();
+        synchronized (this) {
+            this.stateMonitor.workerDeath();
+        }
     }
 
     private String[] split(String page) {

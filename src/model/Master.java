@@ -8,12 +8,12 @@ public class Master extends Thread {
     }
 
     public void run(){
-        while (!this.model.getState().isFinished()) {
+        while (!this.model.hasFinished()) {
             try {
-                if (this.model.getState().isWorking()) {
+                if (!this.model.getState().isStopped()) {
                     model.update();
                 }
-                Thread.sleep(100);
+                Thread.sleep(50);
             } catch (Exception ex) {
             }
 

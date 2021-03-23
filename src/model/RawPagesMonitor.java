@@ -33,6 +33,7 @@ public class RawPagesMonitor {
         notifyAll();
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized String getText() throws IOException, InterruptedException {
         while(this.document.isEmpty()) {
             wait();
@@ -45,6 +46,7 @@ public class RawPagesMonitor {
         if(lastPage >= doc.getNumberOfPages()) {
             this.stripper.setEndPage(doc.getNumberOfPages());
             this.document = Optional.empty();
+            System.out.println("[WORKER]: I am finishing a PDF");
             notifyAll();
         } else {
             this.stripper.setEndPage(lastPage);

@@ -17,6 +17,7 @@ public class Model {
     private Queue<File> documents;
     private List<String> ignoredWords;
     private int limitWords;
+    private boolean computationFinished;
 
     List<Worker> workers;
 
@@ -33,6 +34,7 @@ public class Model {
         this.stateMonitor = new StateMonitor();
         this.workers = new ArrayList<>();
         this.documents = new ArrayDeque<>();
+        this.computationFinished = false;
     }
 
     public void update() throws InterruptedException {
@@ -49,16 +51,22 @@ public class Model {
                         ? document.getNumberOfPages() / workers.size()
                         : document.getNumberOfPages() / workers.size() + 1;
 
+                if(this.documents.isEmpty()) {
+                    this.stateMonitor.pdfTerminated();
+                }
+
                 this.rawPagesMonitor.setDocument(document, workload);
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
-            this.stateMonitor.pdfTerminated();
-            for (Worker worker : this.workers) {
-                worker.join();
+
+            System.out.println("[MASTER]: waiting for dead workers");
+            if(this.stateMonitor.getDeadWorkers() == this.workers.size()) {
+                this.computationFinished = true;
             }
         }
+        System.out.println("[MASTER]: I will now update the GUI");
         notifyObservers();
     }
 
@@ -72,6 +80,10 @@ public class Model {
 
     public void stop() {
         this.stateMonitor.stop();
+    }
+
+    public boolean hasFinished() {
+        return this.computationFinished;
     }
 
     public void addObserver(ModelObserver obs){
