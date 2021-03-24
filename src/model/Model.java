@@ -26,6 +26,7 @@ public class Model {
 
     private final PdfMonitor pdfMonitor;
     private final StateMonitor stateMonitor;
+    private final ElaboratedWordsMonitor wordsMonitor;
 
     private final OccurrencesMonitor occurrencesMonitor;
 
@@ -35,6 +36,7 @@ public class Model {
         this.pdfMonitor = new PdfMonitor();
         this.occurrencesMonitor = new OccurrencesMonitor();
         this.stateMonitor = new StateMonitor();
+        this.wordsMonitor = new ElaboratedWordsMonitor();
         this.workers = new ArrayList<>();
         this.documents = new ArrayDeque<>();
     }
@@ -101,7 +103,7 @@ public class Model {
     public void createWorkers(final int n) throws IOException {
         if(this.workers.isEmpty()) {
             for (int i = 0; i < n; i++) {
-                workers.add(new Worker(this.pdfMonitor, this.occurrencesMonitor, this.stateMonitor, this.ignoredWords));
+                workers.add(new Worker(this.pdfMonitor, this.occurrencesMonitor, this.stateMonitor, this.wordsMonitor, this.ignoredWords));
             }
             this.workers.forEach(Worker::start);
         }
@@ -125,8 +127,9 @@ public class Model {
 
     private void notifyObservers() {
         for (ModelObserver obs: observers) {
-            Map<String, Integer> occurrences = occurrencesMonitor.getOccurrences();
-            obs.modelUpdated(occurrences.isEmpty()
+            Map<String, Integer> occurrences = this.occurrencesMonitor.getOccurrences();
+            obs.modelUpdated(this.wordsMonitor.getElaboratedWords(),
+                    occurrences.isEmpty()
                     ? Optional.empty()
                     : Optional.of(occurrences
                                     .keySet()

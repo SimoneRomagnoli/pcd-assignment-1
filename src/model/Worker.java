@@ -16,12 +16,14 @@ public class Worker extends Thread {
     private final PdfMonitor pdfMonitor;
     private final OccurrencesMonitor occurrencesMonitor;
     private final StateMonitor stateMonitor;
+    private final ElaboratedWordsMonitor wordsMonitor;
     private final List<String> ignoredWords;
 
-    public Worker(PdfMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor stateMonitor, List<String> ignoredWords) throws IOException {
+    public Worker(PdfMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor stateMonitor, ElaboratedWordsMonitor wordsMonitor, List<String> ignoredWords) throws IOException {
         this.pdfMonitor = rawPagesMonitor;
         this.occurrencesMonitor = occurrencesMonitor;
         this.stateMonitor = stateMonitor;
+        this.wordsMonitor = wordsMonitor;
         this.ignoredWords = new ArrayList<>(ignoredWords);
     }
 
@@ -44,7 +46,10 @@ public class Worker extends Thread {
                 try {
                     final Optional<String> text = pdfMonitor.getText();
                     if (text.isPresent()) {
-                        count(filter(split(text.get())));
+                        String[] splittedText = split(text.get());
+                        Map<String, Integer> occurrences = count(filter(splittedText));
+                        this.occurrencesMonitor.writeOccurrence(occurrences);
+                        this.wordsMonitor.add(splittedText.length);
                     } else {
                         stateMonitor.finish();
                     }
@@ -63,7 +68,7 @@ public class Worker extends Thread {
         return Arrays.stream(splittedText).filter(w -> !this.ignoredWords.contains(w)).collect(Collectors.toList());
     }
 
-    private void count(List<String> words) {
+    private Map<String, Integer> count(List<String> words) {
         Map<String, Integer> occurrences = new HashMap<>();
         for(String word: words) {
             if(occurrences.containsKey(word)) {
@@ -72,6 +77,6 @@ public class Worker extends Thread {
                 occurrences.put(word, 1);
             }
         }
-        this.occurrencesMonitor.writeOccurrence(occurrences);
+        return occurrences;
     }
 }

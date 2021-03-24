@@ -25,10 +25,12 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     private JTextField pdfDirectory;
     private JLabel excLabel;
     private JTextField excludeWords;
-    private JLabel wordsLabel;
-    private JTextField numberOfWords;
+    private JLabel limitLabel;
+    private JTextField limitOfWords;
     private JLabel resLabel;
     private JTextArea results;
+    private JLabel wordsLabel;
+    private JTextField elaboratedWords;
     private JButton start;
     private JButton stop;
 
@@ -39,8 +41,9 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
         this.createDirectoryInput();
         this.createExcludedInput();
-        this.createWordsInput();
+        this.createLimitWordsInput();
         this.createResultsOutput();
+        this.createElaboratedWordsOutput();
         this.createStartButton();
         this.createStopButton();
 
@@ -53,7 +56,10 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     }
 
     @Override
-    public void modelUpdated(Optional<Map<String, Integer>> occ) {
+    public void modelUpdated(final int words, final Optional<Map<String, Integer>> occ) {
+        SwingUtilities.invokeLater(() -> {
+            this.elaboratedWords.setText(""+words);
+        });
         if(occ.isPresent()) {
             final Map<String, Integer> occurrences = occ.get();
             String acc = "";
@@ -72,12 +78,12 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         try {
             Object source = ev.getSource();
             if (this.start.equals(source)) {
-                this.controller.notifyStart(this.pdfDirectory.getText(), this.excludeWords.getText(), this.numberOfWords.getText());
+                this.controller.notifyStart(this.pdfDirectory.getText(), this.excludeWords.getText(), this.limitOfWords.getText());
                 this.start.setEnabled(false);
                 this.stop.setEnabled(true);
                 this.pdfDirectory.setEnabled(false);
                 this.excludeWords.setEnabled(false);
-                this.numberOfWords.setEnabled(false);
+                this.limitOfWords.setEnabled(false);
             }
             if (this.stop.equals(source)) {
                 this.controller.notifyStop();
@@ -109,14 +115,14 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.add(this.excludeWords);
     }
 
-    private void createWordsInput() {
-        this.wordsLabel = new JLabel("Select a number of words:");
-        this.wordsLabel.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.425), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
-        this.numberOfWords = new JTextField(10);
-        this.numberOfWords.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.5), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
-        this.numberOfWords.setText("5");
-        this.add(this.wordsLabel);
-        this.add(this.numberOfWords);
+    private void createLimitWordsInput() {
+        this.limitLabel = new JLabel("Select a number of words:");
+        this.limitLabel.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.425), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
+        this.limitOfWords = new JTextField(10);
+        this.limitOfWords.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.5), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
+        this.limitOfWords.setText("5");
+        this.add(this.limitLabel);
+        this.add(this.limitOfWords);
     }
 
     private void createResultsOutput() {
@@ -126,7 +132,17 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.results.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.35), (int)(HEIGHT*0.5));
         this.add(this.resLabel);
         this.add(this.results);
+    }
 
+    private void createElaboratedWordsOutput() {
+        this.wordsLabel = new JLabel("Elaborated words:");
+        this.wordsLabel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.625), (int)(WIDTH*0.5), (int)(HEIGHT*0.1));
+        this.elaboratedWords = new JTextField(10);
+        this.elaboratedWords.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.7), (int)(WIDTH*0.35), (int)(HEIGHT*0.075));
+        this.elaboratedWords.setText("0");
+        this.elaboratedWords.setEnabled(false);
+        this.add(this.wordsLabel);
+        this.add(this.elaboratedWords);
     }
 
     private void createStartButton() {
@@ -138,7 +154,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     private void createStopButton() {
         this.stop = new JButton("Stop");
-        this.stop.setBounds((int)(HEIGHT*0.6), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
+        this.stop.setBounds((int)(HEIGHT*0.46), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.stop.addActionListener(this);
         this.stop.setEnabled(false);
         this.add(this.stop);
