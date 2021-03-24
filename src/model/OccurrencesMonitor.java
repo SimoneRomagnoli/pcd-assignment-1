@@ -3,11 +3,15 @@ package model;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Monitor that keeps the count of occurrences of words.
+ */
 public class OccurrencesMonitor {
 
-    private Map<String, Integer> occurrences = new HashMap<>();
+    private Map<String, Integer> occurrences;
 
     public OccurrencesMonitor() {
+        this.occurrences = new HashMap<>();
     }
 
     public synchronized void writeOccurrence(Map<String, Integer> occ) {

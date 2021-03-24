@@ -1,10 +1,13 @@
 import controller.Controller;
 import gui.View;
-import model.Master;
 import model.Model;
 
 import java.io.IOException;
 
+/**
+ * Main of the program:
+ * it is structured with an MVC architecture.
+ */
 public class SequentialWordCounter {
 
     public static void main(String[] args) throws IOException {
@@ -13,6 +16,5 @@ public class SequentialWordCounter {
         final View view = new View(controller);
         model.addObserver(view);
     }
-
 
 }

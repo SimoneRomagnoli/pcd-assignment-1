@@ -9,13 +9,16 @@ import java.awt.event.ActionListener;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Responsive view of the program:
+ * it updates the model (via events) through the controller;
+ * it has no connection with the model,
+ * but it is notified at every update.
+ */
 public class View extends JFrame implements ActionListener, ModelObserver {
 
     private static final int WIDTH = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2;
     private static final int HEIGHT = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight()/2;
-
-    public static final String START = "START";
-    public static final String STOP = "STOP";
 
     private JLabel dirLabel;
     private JTextField pdfDirectory;
@@ -123,14 +126,14 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     }
 
     private void createStartButton() {
-        this.start = new JButton(START);
+        this.start = new JButton("Start");
         this.start.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.start.addActionListener(this);
         this.add(this.start);
     }
 
     private void createStopButton() {
-        this.stop = new JButton(STOP);
+        this.stop = new JButton("Stop");
         this.stop.setBounds((int)(HEIGHT*0.6), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.stop.addActionListener(this);
         this.stop.setEnabled(false);

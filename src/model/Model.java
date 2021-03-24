@@ -57,7 +57,7 @@ public class Model {
                 if (!ap.canExtractContent()) {
                     throw new IOException("You do not have permission to extract text");
                 }
-                System.out.println("File: " + f.getName() + " with " + document.getNumberOfPages() + " pages.");
+                System.out.println("Processing file: " + f.getName());
                 int workload = document.getNumberOfPages() % workers.size() == 0
                         ? document.getNumberOfPages() / workers.size()
                         : document.getNumberOfPages() / workers.size() + 1;
@@ -75,6 +75,38 @@ public class Model {
         notifyObservers();
     }
 
+    /**
+     * Setting main arguments of the program
+     * when the computation starts.
+     *
+     * @param pdfDirectoryName
+     * @param ignoredWordsFileName
+     * @param limitWords
+     * @throws IOException
+     */
+    public void setArgs(final String pdfDirectoryName, final String ignoredWordsFileName, final String limitWords) throws IOException {
+        File pdfDirectory = new File(pdfDirectoryName);
+        this.documents.addAll(Arrays.asList(Objects.requireNonNull(pdfDirectory.listFiles())));
+        this.ignoredWords.addAll(Files.readAllLines(Path.of(ignoredWordsFileName)));
+        this.limitWords = Integer.parseInt(limitWords);
+    }
+
+    /**
+     * Method called by the controller to create
+     * workers knowing the amount of available processors.
+     *
+     * @param n
+     * @throws IOException
+     */
+    public void createWorkers(final int n) throws IOException {
+        if(this.workers.isEmpty()) {
+            for (int i = 0; i < n; i++) {
+                workers.add(new Worker(this.pdfMonitor, this.occurrencesMonitor, this.stateMonitor, this.ignoredWords));
+            }
+            this.workers.forEach(Worker::start);
+        }
+    }
+
     public StateMonitor getState() {
         return this.stateMonitor;
     }
@@ -89,22 +121,6 @@ public class Model {
 
     public void addObserver(ModelObserver obs){
         observers.add(obs);
-    }
-
-    public void setArgs(final String pdfDirectoryName, final String ignoredWordsFileName, final String limitWords) throws IOException {
-        File pdfDirectory = new File(pdfDirectoryName);
-        this.documents.addAll(Arrays.asList(Objects.requireNonNull(pdfDirectory.listFiles())));
-        this.ignoredWords.addAll(Files.readAllLines(Path.of(ignoredWordsFileName)));
-        this.limitWords = Integer.parseInt(limitWords);
-    }
-
-    public void createWorkers(final int n) throws IOException {
-        if(this.workers.isEmpty()) {
-            for (int i = 0; i < n; i++) {
-                workers.add(new Worker(this.pdfMonitor, this.occurrencesMonitor, this.stateMonitor, this.ignoredWords));
-            }
-            this.workers.forEach(Worker::start);
-        }
     }
 
     private void notifyObservers() {

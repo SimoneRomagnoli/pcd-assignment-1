@@ -4,6 +4,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Worker thread:
+ * it takes a portion of a pdf
+ * and completes the "split", "filter", and "count" tasks
+ */
 public class Worker extends Thread {
 
     private static final String REGEX = "\\s+|(?=\\p{Punct})|(?<=\\p{Punct})";
@@ -20,6 +25,12 @@ public class Worker extends Thread {
         this.ignoredWords = new ArrayList<>(ignoredWords);
     }
 
+    /**
+     * Main computation of a worker thread:
+     * if the program is stopped,
+     * then wait,
+     * else complete the needed tasks.
+     */
     @Override
     public void run() {
         while (!(this.stateMonitor.isFinished())) {
