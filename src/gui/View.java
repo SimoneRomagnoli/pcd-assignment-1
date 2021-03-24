@@ -1,7 +1,6 @@
 package gui;
 
 import controller.Controller;
-import model.Model;
 
 import javax.swing.*;
 import java.awt.*;
@@ -59,13 +58,6 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         SwingUtilities.invokeLater(() -> {
             this.results.setText(finalAcc);
         });
-        //System.out.println("[MASTER]: GUI updated");
-    }
-
-    @Override
-    public void finalUpdate() {
-        this.stop.setEnabled(false);
-        this.start.setEnabled(false);
     }
 
     @Override

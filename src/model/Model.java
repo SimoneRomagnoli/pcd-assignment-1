@@ -11,6 +11,10 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Class representing the model of the program:
+ * here is nested the entire logic of the program.
+ */
 public class Model {
 
     private final List<ModelObserver> observers;
@@ -20,7 +24,7 @@ public class Model {
 
     List<Worker> workers;
 
-    private final RawPagesMonitor rawPagesMonitor;
+    private final PdfMonitor pdfMonitor;
     private final StateMonitor stateMonitor;
 
     private final OccurrencesMonitor occurrencesMonitor;
@@ -28,14 +32,23 @@ public class Model {
     public Model() throws IOException {
         this.observers = new ArrayList<>();
         this.ignoredWords = new ArrayList<>();
-        this.rawPagesMonitor = new RawPagesMonitor();
+        this.pdfMonitor = new PdfMonitor();
         this.occurrencesMonitor = new OccurrencesMonitor();
         this.stateMonitor = new StateMonitor();
         this.workers = new ArrayList<>();
         this.documents = new ArrayDeque<>();
     }
 
+    /**
+     * Method called only by the master thread:
+     * it handles the monitors in order to manage the workers
+     * and their work.
+     * @throws InterruptedException
+     */
     public void update() throws InterruptedException {
+        //If there are still documents to process,
+        //then take one of them and put it in the pdfMonitor,
+        //else wait for the workers to end their computation
         if(!documents.isEmpty()) {
             try {
                 File f = documents.poll();
@@ -49,60 +62,33 @@ public class Model {
                         ? document.getNumberOfPages() / workers.size()
                         : document.getNumberOfPages() / workers.size() + 1;
 
-                this.rawPagesMonitor.setDocument(document, workload);
+                this.pdfMonitor.setDocument(document, workload, documents.isEmpty());
 
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
-            System.out.println("[MASTER]: send to all workers the command for the termination");
-
-            this.stateMonitor.setWaitingForTermination();
-            this.rawPagesMonitor.documentsFinished();
-
-
             for(Worker w : workers){
                 w.join();
             }
-
-            stateMonitor.setFinish();
-            //here we need to disable all the buttons
-            observers.get(0).finalUpdate();
-
         }
-        System.out.println("[MASTER]: updating the  GUI");
         notifyObservers();
-
     }
-
-
 
     public StateMonitor getState() {
         return this.stateMonitor;
     }
 
     public void start() {
-        this.stateMonitor.setActive();
+        this.stateMonitor.start();
     }
 
     public void stop() {
-        this.stateMonitor.setStop();
+        this.stateMonitor.stop();
     }
 
     public void addObserver(ModelObserver obs){
         observers.add(obs);
-    }
-
-    private synchronized void notifyObservers() {
-        for (ModelObserver obs: observers) {
-            Map<String, Integer> occurrences = occurrencesMonitor.getOccurrences();
-            obs.modelUpdated(occurrences
-                                .keySet()
-                                .stream()
-                                .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
-                                .limit(this.limitWords)
-                                .collect(Collectors.toMap(k -> k, occurrences::get)));
-        }
     }
 
     public void setArgs(final String pdfDirectoryName, final String ignoredWordsFileName, final String limitWords) throws IOException {
@@ -115,9 +101,21 @@ public class Model {
     public void createWorkers(final int n) throws IOException {
         if(this.workers.isEmpty()) {
             for (int i = 0; i < n; i++) {
-                workers.add(new Worker(this.rawPagesMonitor, this.occurrencesMonitor, this.stateMonitor, this.ignoredWords));
+                workers.add(new Worker(this.pdfMonitor, this.occurrencesMonitor, this.stateMonitor, this.ignoredWords));
             }
             this.workers.forEach(Worker::start);
+        }
+    }
+
+    private void notifyObservers() {
+        for (ModelObserver obs: observers) {
+            Map<String, Integer> occurrences = occurrencesMonitor.getOccurrences();
+            obs.modelUpdated(occurrences
+                    .keySet()
+                    .stream()
+                    .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
+                    .limit(this.limitWords)
+                    .collect(Collectors.toMap(k -> k, occurrences::get)));
         }
     }
 

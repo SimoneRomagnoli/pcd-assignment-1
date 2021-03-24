@@ -1,43 +1,38 @@
 package model;
 
+/**
+ * Monitor that represents the state of the computation:
+ * it can be started, stopped or finished.
+ */
 public class StateMonitor {
 
     enum State {
-        ACTIVE, STOPPED, FINISHED, WAITING_FOR_TERMINATION
+        STARTED, STOPPED, FINISHED
     }
 
-    private State ss;
+    private State state;
 
     public StateMonitor() {
-        this.ss = State.STOPPED;
+        this.state = State.STOPPED;
     }
 
-
     public synchronized boolean isFinished() {
-        return this.ss == State.FINISHED;
+        return this.state == State.FINISHED;
     }
 
     public synchronized boolean isStopped() {
-        return this.ss == State.STOPPED;
+        return this.state == State.STOPPED;
     }
 
-    public synchronized boolean isWaitingForTermination() {
-        return this.ss == State.WAITING_FOR_TERMINATION;
+    public synchronized void start(){
+        this.state = State.STARTED;
     }
 
-    public synchronized void setActive(){
-        this.ss = State.ACTIVE;
+    public synchronized void stop(){
+        this.state = State.STOPPED;
     }
 
-    public synchronized void setStop(){
-        this.ss = State.STOPPED;
-    }
-
-    public synchronized void setWaitingForTermination(){
-        this.ss = State.WAITING_FOR_TERMINATION;
-    }
-
-    public synchronized void setFinish() {
-        this.ss = State.FINISHED;
+    public synchronized void finish() {
+        this.state = State.FINISHED;
     }
 }

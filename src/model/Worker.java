@@ -8,51 +8,40 @@ public class Worker extends Thread {
 
     private static final String REGEX = "\\s+|(?=\\p{Punct})|(?<=\\p{Punct})";
 
-    private final RawPagesMonitor rawPagesMonitor;
+    private final PdfMonitor pdfMonitor;
     private final OccurrencesMonitor occurrencesMonitor;
     private final StateMonitor stateMonitor;
     private final List<String> ignoredWords;
 
-    public Worker(RawPagesMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor stateMonitor, List<String> ignoredWords) throws IOException {
-        this.rawPagesMonitor = rawPagesMonitor;
+    public Worker(PdfMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor stateMonitor, List<String> ignoredWords) throws IOException {
+        this.pdfMonitor = rawPagesMonitor;
         this.occurrencesMonitor = occurrencesMonitor;
         this.stateMonitor = stateMonitor;
         this.ignoredWords = new ArrayList<>(ignoredWords);
     }
 
-//    @Override
-//    public void run() {
-//        // The worker terminates when the state is "WaitingForTermination" and all the pages in the RawPagesMonitor are elaborated.
-//        while(!(this.stateMonitor.isWaitingForTermination() && this.rawPagesMonitor.allPagesConsumed())) {
-//            if(this.stateMonitor.isStopped()) {
-//                try {
-//                        Thread.sleep(100);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            } else {
-//                try {
-//                        final String text = rawPagesMonitor.getText();
-//                        count(filter(split(text)));
-//                } catch (IOException | InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-
-//    }
-
+    @Override
     public void run() {
-//        // The worker terminates when the state is "WaitingForTermination" and all the pages in the RawPagesMonitor are elaborated.
-        while (!(this.stateMonitor.isWaitingForTermination())) {
-            try {
-                    final String text = rawPagesMonitor.getText();
-                    if(text!= null) count(filter(split(text)));
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+        while (!(this.stateMonitor.isFinished())) {
+            if (this.stateMonitor.isStopped()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    final Optional<String> text = pdfMonitor.getText();
+                    if (text.isPresent()) {
+                        count(filter(split(text.get())));
+                    } else {
+                        stateMonitor.finish();
+                    }
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
-        System.out.println("[WORKER]: terminated");
     }
 
     private String[] split(String page) {
