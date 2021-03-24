@@ -126,12 +126,16 @@ public class Model {
     private void notifyObservers() {
         for (ModelObserver obs: observers) {
             Map<String, Integer> occurrences = occurrencesMonitor.getOccurrences();
-            obs.modelUpdated(occurrences
-                    .keySet()
-                    .stream()
-                    .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
-                    .limit(this.limitWords)
-                    .collect(Collectors.toMap(k -> k, occurrences::get)));
+            obs.modelUpdated(occurrences.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(occurrences
+                                    .keySet()
+                                    .stream()
+                                    .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
+                                    .limit(this.limitWords)
+                                    .collect(Collectors.toMap(k -> k, occurrences::get))
+                                )
+            );
         }
     }
 

@@ -13,6 +13,7 @@ public class Master extends Thread {
     }
 
     public void run(){
+        final long start = System.currentTimeMillis();
         while (!this.model.getState().isFinished()) {
             try {
                 if (!this.model.getState().isStopped()) {
@@ -22,7 +23,7 @@ public class Master extends Thread {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
+        System.out.println("Total time: "+(System.currentTimeMillis()-start)+" ms.");
     }
 }

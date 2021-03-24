@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -52,15 +53,18 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     }
 
     @Override
-    public void modelUpdated(Map<String, Integer> occurrences) {
-        String acc = "";
-        for(String word:occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
-            acc += word+" - "+occurrences.get(word)+" times \n";
+    public void modelUpdated(Optional<Map<String, Integer>> occ) {
+        if(occ.isPresent()) {
+            final Map<String, Integer> occurrences = occ.get();
+            String acc = "";
+            for (String word : occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
+                acc += word + " - " + occurrences.get(word) + " times \n";
+            }
+            final String finalAcc = acc;
+            SwingUtilities.invokeLater(() -> {
+                this.results.setText(finalAcc);
+            });
         }
-        final String finalAcc = acc;
-        SwingUtilities.invokeLater(() -> {
-            this.results.setText(finalAcc);
-        });
     }
 
     @Override
