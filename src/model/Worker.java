@@ -44,7 +44,7 @@ public class Worker extends Thread {
                 }
             } else {
                 try {
-                    final Optional<String> text = pdfMonitor.getText();
+                    final Optional<String> text = pdfMonitor.getStripper();
                     if (text.isPresent()) {
                         String[] splittedText = split(text.get());
                         Map<String, Integer> occurrences = count(filter(splittedText));

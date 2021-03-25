@@ -137,8 +137,8 @@ public class Model {
                                     .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
                                     .limit(this.limitWords)
                                     .collect(Collectors.toMap(k -> k, occurrences::get))
-                                )
-            );
+
+            ));
         }
     }
 

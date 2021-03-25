@@ -61,7 +61,7 @@ public class PdfMonitor {
      * @throws IOException
      * @throws InterruptedException
      */
-    public synchronized Optional<String> getText() throws IOException, InterruptedException {
+    public synchronized Optional<String> getStripper() throws IOException, InterruptedException {
         //Workers exit this cycle either if a document is present,
         //or there are no documents left (the last one has already been processed).
         while(this.document.isEmpty() && !documentsFinished) {
