@@ -1,5 +1,8 @@
 package model;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,6 +21,7 @@ public class Worker extends Thread {
     private final StateMonitor stateMonitor;
     private final ElaboratedWordsMonitor wordsMonitor;
     private final List<String> ignoredWords;
+    private final PDFTextStripper stripper;
 
     public Worker(PdfMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor stateMonitor, ElaboratedWordsMonitor wordsMonitor, List<String> ignoredWords) throws IOException {
         this.pdfMonitor = rawPagesMonitor;
@@ -25,6 +29,8 @@ public class Worker extends Thread {
         this.stateMonitor = stateMonitor;
         this.wordsMonitor = wordsMonitor;
         this.ignoredWords = new ArrayList<>(ignoredWords);
+        this.stripper = new PDFTextStripper();
+        this.stripper.setSortByPosition(true);
     }
 
     /**
@@ -44,9 +50,13 @@ public class Worker extends Thread {
                 }
             } else {
                 try {
-                    final Optional<String> text = pdfMonitor.getStripper();
-                    if (text.isPresent()) {
-                        String[] splittedText = split(text.get());
+                    final Optional<PDDocument> document = pdfMonitor.getDocument();
+                    if (document.isPresent()) {
+                        PDDocument doc = document.get();
+                        this.stripper.setStartPage(1);
+                        this.stripper.setStartPage(doc.getNumberOfPages());
+                        System.out.println(this.stripper.getText(doc));
+                        String[] splittedText = split(this.stripper.getText(doc));
                         Map<String, Integer> occurrences = count(filter(splittedText));
                         this.occurrencesMonitor.writeOccurrence(occurrences);
                         this.wordsMonitor.add(splittedText.length);
