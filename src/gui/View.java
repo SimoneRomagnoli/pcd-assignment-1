@@ -1,6 +1,13 @@
 package gui;
 
 import controller.Controller;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.ui.RefineryUtilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,7 +25,7 @@ import java.util.stream.Collectors;
  */
 public class View extends JFrame implements ActionListener, ModelObserver {
 
-    private static final int WIDTH = (int) Toolkit.getDefaultToolkit().getScreenSize().getWidth()/2;
+    private static final int WIDTH = (int) (Toolkit.getDefaultToolkit().getScreenSize().getWidth()/1.4);
     private static final int HEIGHT = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight()/2;
 
     private JLabel dirLabel;
@@ -31,8 +38,11 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     private JTextArea results;
     private JLabel wordsLabel;
     private JTextField elaboratedWords;
+    private JPanel chartPanel;
     private JButton start;
     private JButton stop;
+    private DefaultCategoryDataset dataset =new DefaultCategoryDataset();
+
 
     private Controller controller;
 
@@ -46,6 +56,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.createElaboratedWordsOutput();
         this.createStartButton();
         this.createStopButton();
+        this.createChartPanel();
 
         this.setSize(WIDTH, HEIGHT);
         setResizable(false);
@@ -55,6 +66,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.controller = controller;
     }
 
+
     @Override
     public void modelUpdated(final int words, final Optional<Map<String, Integer>> occ) {
         SwingUtilities.invokeLater(() -> {
@@ -63,8 +75,14 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         if(occ.isPresent()) {
             final Map<String, Integer> occurrences = occ.get();
             String acc = "";
+            // Pulisco il vecchio dataset
+            dataset.clear();
             for (String word : occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
                 acc += word + " - " + occurrences.get(word) + " times \n";
+                // aggiungo le top parole al chart
+                SwingUtilities.invokeLater(() -> {
+                    this.dataset.addValue(occurrences.get(word), "row", word);
+                });
             }
             final String finalAcc = acc;
             SwingUtilities.invokeLater(() -> {
@@ -97,9 +115,9 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     private void createDirectoryInput() {
         this.dirLabel = new JLabel("Select the directory containing your PDFs:");
-        this.dirLabel.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.025), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
+        this.dirLabel.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.025), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.pdfDirectory = new JTextField(10);
-        this.pdfDirectory.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.1), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
+        this.pdfDirectory.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.1), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.pdfDirectory.setText("./res/");
         this.add(this.dirLabel);
         this.add(this.pdfDirectory);
@@ -107,9 +125,9 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     private void createExcludedInput() {
         this.excLabel = new JLabel("Select the file containing excluded words:");
-        this.excLabel.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.225), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
+        this.excLabel.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.225), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.excludeWords = new JTextField(10);
-        this.excludeWords.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.3), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
+        this.excludeWords.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.3), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.excludeWords.setText("./exclude.txt");
         this.add(this.excLabel);
         this.add(this.excludeWords);
@@ -117,9 +135,9 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     private void createLimitWordsInput() {
         this.limitLabel = new JLabel("Select a number of words:");
-        this.limitLabel.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.425), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
+        this.limitLabel.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.425), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.limitOfWords = new JTextField(10);
-        this.limitOfWords.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.5), (int)(WIDTH*0.4), (int)(HEIGHT*0.1));
+        this.limitOfWords.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.5), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.limitOfWords.setText("5");
         this.add(this.limitLabel);
         this.add(this.limitOfWords);
@@ -127,18 +145,18 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     private void createResultsOutput() {
         this.resLabel = new JLabel("Results:");
-        this.resLabel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.025), (int)(WIDTH*0.5), (int)(HEIGHT*0.1));
+        this.resLabel.setBounds((int)(WIDTH*0.25), (int)(HEIGHT*0.025), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.results = new JTextArea("");
-        this.results.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.35), (int)(HEIGHT*0.5));
+        this.results.setBounds((int)(WIDTH*0.25), (int)(HEIGHT*0.1), (int)(WIDTH*0.2), (int)(HEIGHT*0.5));
         this.add(this.resLabel);
         this.add(this.results);
     }
 
     private void createElaboratedWordsOutput() {
         this.wordsLabel = new JLabel("Elaborated words:");
-        this.wordsLabel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.625), (int)(WIDTH*0.5), (int)(HEIGHT*0.1));
+        this.wordsLabel.setBounds((int)(WIDTH*0.25), (int)(HEIGHT*0.625), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.elaboratedWords = new JTextField(10);
-        this.elaboratedWords.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.7), (int)(WIDTH*0.35), (int)(HEIGHT*0.075));
+        this.elaboratedWords.setBounds((int)(WIDTH*0.25), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.075));
         this.elaboratedWords.setText("0");
         this.elaboratedWords.setEnabled(false);
         this.add(this.wordsLabel);
@@ -147,16 +165,30 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
     private void createStartButton() {
         this.start = new JButton("Start");
-        this.start.setBounds((int)(HEIGHT*0.1), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
+        this.start.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.7), (int)(WIDTH*0.15), (int)(HEIGHT*0.1));
         this.start.addActionListener(this);
         this.add(this.start);
     }
 
     private void createStopButton() {
         this.stop = new JButton("Stop");
-        this.stop.setBounds((int)(HEIGHT*0.46), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
+        this.stop.setBounds((int)(WIDTH*0.7), (int)(HEIGHT*0.7), (int)(WIDTH*0.15), (int)(HEIGHT*0.1));
         this.stop.addActionListener(this);
         this.stop.setEnabled(false);
         this.add(this.stop);
+    }
+
+    private void createChartPanel() {
+        JFreeChart barChart = ChartFactory.createBarChart(
+                "",
+                "",
+                "Occurrences",
+                dataset,
+                PlotOrientation.HORIZONTAL,
+                false, true, false);
+
+        this.chartPanel = new ChartPanel(barChart);
+        this.chartPanel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.45), (int)(HEIGHT*0.5));
+        this.add(chartPanel);
     }
 }

@@ -2,6 +2,8 @@
   <library name="pdfbox-app-2.0.22">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/lib/pdfbox-app-2.0.22.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jfreechart-1.5.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jcommon-1.0.23.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
