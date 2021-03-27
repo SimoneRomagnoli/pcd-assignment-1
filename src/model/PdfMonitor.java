@@ -1,5 +1,7 @@
 package model;
 
+import org.apache.pdfbox.multipdf.PDFCloneUtility;
+import org.apache.pdfbox.multipdf.PageExtractor;
 import org.apache.pdfbox.multipdf.Splitter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -7,10 +9,7 @@ import org.apache.pdfbox.tools.PDFMerger;
 import org.apache.pdfbox.tools.PDFSplit;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.LinkedList;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -21,13 +20,10 @@ import java.util.stream.Collectors;
 public class PdfMonitor {
 
     private boolean documentsFinished;
-
-    private final Splitter splitter;
     private Queue<PDDocument> documents;
 
     public PdfMonitor() {
-        this.splitter = new Splitter();
-        this.documents = new ArrayDeque<>();
+        this.documents = new LinkedList<>();
     }
 
     /**
@@ -46,12 +42,11 @@ public class PdfMonitor {
             wait();
         }
         this.documentsFinished = lastDocument;
-        this.splitter.setSplitAtPage(workload);
-        this.documents = new LinkedList<>(this.splitter.split(doc));
-        this.documents.forEach(d -> {
-            System.out.println("Partition of pdf page number is "+d.getNumberOfPages());
-        });
 
+        Splitter splitter = new Splitter();
+        splitter.setSplitAtPage(workload);
+        this.documents.addAll(splitter.split(doc));
+        this.documents.forEach(d -> System.out.println("Partition of pdf page number is "+d.getNumberOfPages()));
         notifyAll();
     }
 
@@ -65,7 +60,7 @@ public class PdfMonitor {
      * @throws IOException
      * @throws InterruptedException
      */
-    public synchronized Optional<PDDocument> getDocument() throws InterruptedException {
+    public synchronized Optional<String> getText() throws InterruptedException, IOException {
         //Workers exit this cycle either if a document is present,
         //or there are no documents left (the last one has already been processed).
         while(this.documents.isEmpty() && !documentsFinished) {
@@ -74,10 +69,14 @@ public class PdfMonitor {
 
         if(!this.documents.isEmpty()) {
             PDDocument doc = documents.poll();
+            PDFTextStripper stripper = new PDFTextStripper();
+            stripper.setSortByPosition(true);
+            stripper.setStartPage(1);
+            stripper.setEndPage(doc.getNumberOfPages());
             if(this.documents.isEmpty()) {
                 notifyAll();
             }
-            return Optional.of(doc);
+            return Optional.of(stripper.getText(doc));
         } else {
             return Optional.empty();
         }

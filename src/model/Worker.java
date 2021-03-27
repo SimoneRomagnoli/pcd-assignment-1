@@ -1,5 +1,6 @@
 package model;
 
+import org.apache.pdfbox.multipdf.PDFCloneUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 
@@ -50,13 +51,10 @@ public class Worker extends Thread {
                 }
             } else {
                 try {
-                    final Optional<PDDocument> document = pdfMonitor.getDocument();
-                    if (document.isPresent()) {
-                        PDDocument doc = document.get();
-                        this.stripper.setStartPage(1);
-                        this.stripper.setStartPage(doc.getNumberOfPages());
-                        System.out.println(this.stripper.getText(doc));
-                        String[] splittedText = split(this.stripper.getText(doc));
+                    final Optional<String> text = pdfMonitor.getText();
+                    if (text.isPresent()) {
+                        //System.out.println(this.stripper.getText(doc));
+                        String[] splittedText = split(text.get());
                         Map<String, Integer> occurrences = count(filter(splittedText));
                         this.occurrencesMonitor.writeOccurrence(occurrences);
                         this.wordsMonitor.add(splittedText.length);
