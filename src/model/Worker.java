@@ -11,7 +11,9 @@ import java.util.stream.Collectors;
  */
 public class Worker extends Thread {
 
-    private static final String REGEX = "\\s+|(?=\\p{Punct})|(?<=\\p{Punct})";
+    private static final String REGEX = "\\W+";
+
+    private final Model model;
 
     private final PdfMonitor pdfMonitor;
     private final OccurrencesMonitor occurrencesMonitor;
@@ -19,7 +21,8 @@ public class Worker extends Thread {
     private final ElaboratedWordsMonitor wordsMonitor;
     private final List<String> ignoredWords;
 
-    public Worker(PdfMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor stateMonitor, ElaboratedWordsMonitor wordsMonitor, List<String> ignoredWords) throws IOException {
+    public Worker(final Model model, PdfMonitor rawPagesMonitor, OccurrencesMonitor occurrencesMonitor, StateMonitor stateMonitor, ElaboratedWordsMonitor wordsMonitor, List<String> ignoredWords) throws IOException {
+        this.model = model;
         this.pdfMonitor = rawPagesMonitor;
         this.occurrencesMonitor = occurrencesMonitor;
         this.stateMonitor = stateMonitor;
@@ -44,12 +47,13 @@ public class Worker extends Thread {
                 }
             } else {
                 try {
-                    final Optional<String> text = pdfMonitor.getStripper();
+                    final Optional<String> text = pdfMonitor.getText();
                     if (text.isPresent()) {
                         String[] splittedText = split(text.get());
                         Map<String, Integer> occurrences = count(filter(splittedText));
                         this.occurrencesMonitor.writeOccurrence(occurrences);
                         this.wordsMonitor.add(splittedText.length);
+                        this.model.notifyObservers();
                     } else {
                         stateMonitor.finish();
                     }

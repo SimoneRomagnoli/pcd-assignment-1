@@ -74,7 +74,6 @@ public class Model {
                 w.join();
             }
         }
-        notifyObservers();
     }
 
     /**
@@ -103,9 +102,29 @@ public class Model {
     public void createWorkers(final int n) throws IOException {
         if(this.workers.isEmpty()) {
             for (int i = 0; i < n; i++) {
-                workers.add(new Worker(this.pdfMonitor, this.occurrencesMonitor, this.stateMonitor, this.wordsMonitor, this.ignoredWords));
+                workers.add(new Worker(this, this.pdfMonitor, this.occurrencesMonitor, this.stateMonitor, this.wordsMonitor, this.ignoredWords));
             }
             this.workers.forEach(Worker::start);
+        }
+    }
+
+    /**
+     * Notify the GUI sending the current values for most used words
+     * and number of elaborated words
+     */
+    public void notifyObservers() {
+        for (ModelObserver obs: observers) {
+            Map<String, Integer> occurrences = this.occurrencesMonitor.getOccurrences();
+            obs.modelUpdated(this.wordsMonitor.getElaboratedWords(),
+                    occurrences.isEmpty()
+                            ? Optional.empty()
+                            : Optional.of(occurrences
+                            .keySet()
+                            .stream()
+                            .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
+                            .limit(this.limitWords)
+                            .collect(Collectors.toMap(k -> k, occurrences::get))
+                    ));
         }
     }
 
@@ -121,25 +140,6 @@ public class Model {
         this.stateMonitor.stop();
     }
 
-    public void addObserver(ModelObserver obs){
-        observers.add(obs);
-    }
-
-    private void notifyObservers() {
-        for (ModelObserver obs: observers) {
-            Map<String, Integer> occurrences = this.occurrencesMonitor.getOccurrences();
-            obs.modelUpdated(this.wordsMonitor.getElaboratedWords(),
-                    occurrences.isEmpty()
-                    ? Optional.empty()
-                    : Optional.of(occurrences
-                                    .keySet()
-                                    .stream()
-                                    .sorted((a, b) -> occurrences.get(b) - occurrences.get(a))
-                                    .limit(this.limitWords)
-                                    .collect(Collectors.toMap(k -> k, occurrences::get))
-
-            ));
-        }
-    }
+    public void addObserver(ModelObserver obs){ observers.add(obs); }
 
 }

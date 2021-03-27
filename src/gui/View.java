@@ -68,7 +68,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
 
 
     @Override
-    public void modelUpdated(final int words, final Optional<Map<String, Integer>> occ) {
+    public synchronized void modelUpdated(final int words, final Optional<Map<String, Integer>> occ) {
         SwingUtilities.invokeLater(() -> {
             this.elaboratedWords.setText(""+words);
         });

@@ -1,10 +1,16 @@
 package model;
 
+import org.apache.pdfbox.multipdf.PDFCloneUtility;
+import org.apache.pdfbox.multipdf.PageExtractor;
+import org.apache.pdfbox.multipdf.Splitter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.tools.PDFMerger;
+import org.apache.pdfbox.tools.PDFSplit;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *  Monitor that handles only one PDF at a time:
@@ -13,20 +19,11 @@ import java.util.Optional;
  */
 public class PdfMonitor {
 
-    private static final int ZERO = 0;
-
-    private Optional<PDDocument> document;
-    private final PDFTextStripper stripper;
-    private int workload;
-    private int threadID;
     private boolean documentsFinished;
+    private Queue<PDDocument> documents;
 
-    public PdfMonitor() throws IOException {
-        this.document = Optional.empty();
-        this.stripper = new PDFTextStripper();
-        this.stripper.setSortByPosition(true);
-        this.workload = ZERO;
-        this.threadID = ZERO;
+    public PdfMonitor() {
+        this.documents = new LinkedList<>();
     }
 
     /**
@@ -40,14 +37,15 @@ public class PdfMonitor {
      * @param lastDocument
      * @throws InterruptedException
      */
-    public synchronized void setDocument(final PDDocument doc, final int workload, final boolean lastDocument) throws InterruptedException {
-        while(this.document.isPresent()) {
+    public synchronized void setDocument(final PDDocument doc, final int workload, final boolean lastDocument) throws InterruptedException, IOException {
+        while(!this.documents.isEmpty()) {
             wait();
         }
-        this.document = Optional.of(doc);
-        this.workload = workload;
-        this.threadID = ZERO;
         this.documentsFinished = lastDocument;
+
+        Splitter splitter = new Splitter();
+        splitter.setSplitAtPage(workload);
+        this.documents.addAll(splitter.split(doc));
         notifyAll();
     }
 
@@ -61,31 +59,23 @@ public class PdfMonitor {
      * @throws IOException
      * @throws InterruptedException
      */
-    public synchronized Optional<String> getStripper() throws IOException, InterruptedException {
+    public synchronized Optional<String> getText() throws InterruptedException, IOException {
         //Workers exit this cycle either if a document is present,
         //or there are no documents left (the last one has already been processed).
-        while(this.document.isEmpty() && !documentsFinished) {
+        while(this.documents.isEmpty() && !documentsFinished) {
             wait();
         }
 
-        //If the document is not present then the computation is finished
-        if(document.isPresent()) {
-            PDDocument doc = document.get();
-            final int firstPage = workload * threadID + 1;
-            this.stripper.setStartPage(firstPage);
-            threadID++;
-            final int lastPage = workload * threadID;
-
-            //The last worker needs to remove the previous document
-            //in order to let the master give the new one
-            if (lastPage >= doc.getNumberOfPages()) {
-                this.stripper.setEndPage(doc.getNumberOfPages());
-                this.document = Optional.empty();
+        if(!this.documents.isEmpty()) {
+            PDDocument doc = documents.poll();
+            PDFTextStripper stripper = new PDFTextStripper();
+            stripper.setSortByPosition(true);
+            stripper.setStartPage(1);
+            stripper.setEndPage(doc.getNumberOfPages());
+            if(this.documents.isEmpty()) {
                 notifyAll();
-            } else {
-                this.stripper.setEndPage(lastPage);
             }
-            return Optional.of(this.stripper.getText(doc));
+            return Optional.of(stripper.getText(doc));
         } else {
             return Optional.empty();
         }
