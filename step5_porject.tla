@@ -11,8 +11,8 @@ define
 NoOverflowInvariant == Len(pdfMonitor) <= NUMBER_OF_WORKERS
 end define;
 
-process master = "master"
-variable pdf = "",
+fair process master = "master"
+variable pdf = 0,
 tmp = 0;
 begin Produce:
   while pdf_number < TOTAL_PDF do
@@ -30,8 +30,8 @@ begin Produce:
   end while;
 end process;
 
-process worker \in {"worker1", "worker2"}
-variable pdf = "none";
+fair process worker \in {"worker1", "worker2"}
+variable pdf = 999;
 begin Consume:
   while stateMonitor = "on" do
     getFromMonitor: 
@@ -41,6 +41,7 @@ begin Consume:
             pdfMonitor := Tail(pdfMonitor);
             if pdfMonitor = <<>> /\ pdf_number = TOTAL_PDF 
             then stateMonitor := "off";
+                 
             end if;
             processPdf:
                 print pdf;
@@ -48,7 +49,7 @@ begin Consume:
   end while;
 end process;
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "315e898c" /\ chksum(tla) = "f34a2a")
+\* BEGIN TRANSLATION (chksum(pcal) = "cfda89f8" /\ chksum(tla) = "b63badd6")
 \* Process variable pdf of process master at line 15 col 10 changed to pdf_
 VARIABLES pdfMonitor, stateMonitor, pdf_number, pc
 
@@ -66,10 +67,10 @@ Init == (* Global variables *)
         /\ stateMonitor = "on"
         /\ pdf_number = 0
         (* Process master *)
-        /\ pdf_ = ""
+        /\ pdf_ = 0
         /\ tmp = 0
         (* Process worker *)
-        /\ pdf = [self \in {"worker1", "worker2"} |-> "none"]
+        /\ pdf = [self \in {"worker1", "worker2"} |-> 999]
         /\ pc = [self \in ProcSet |-> CASE self = "master" -> "Produce"
                                         [] self \in {"worker1", "worker2"} -> "Consume"]
 
@@ -142,7 +143,9 @@ Next == master
            \/ (\E self \in {"worker1", "worker2"}: worker(self))
            \/ Terminating
 
-Spec == Init /\ [][Next]_vars
+Spec == /\ Init /\ [][Next]_vars
+        /\ WF_vars(master)
+        /\ \A self \in {"worker1", "worker2"} : WF_vars(worker(self))
 
 Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 
