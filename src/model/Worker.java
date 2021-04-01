@@ -11,7 +11,9 @@ import java.util.stream.Collectors;
  */
 public class Worker extends Thread {
 
-    private static final String REGEX = "\\W+";
+//    private static final String REGEX = "\\W+";
+    //regex della marta
+    private static final String REGEX = "[^a-zA-Z0-9]";
 
     private final Model model;
 

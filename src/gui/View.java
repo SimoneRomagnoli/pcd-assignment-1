@@ -158,7 +158,6 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.elaboratedWords = new JTextField(10);
         this.elaboratedWords.setBounds((int)(WIDTH*0.25), (int)(HEIGHT*0.7), (int)(WIDTH*0.2), (int)(HEIGHT*0.075));
         this.elaboratedWords.setText("0");
-        this.elaboratedWords.setEnabled(false);
         this.add(this.wordsLabel);
         this.add(this.elaboratedWords);
     }
