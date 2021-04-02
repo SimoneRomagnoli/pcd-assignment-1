@@ -1,5 +1,7 @@
 package model;
 
+import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.multipdf.Splitter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 
@@ -8,6 +10,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.stream.Collectors;
 
 /**
  *  Monitor that handles only one PDF at a time:
@@ -34,7 +37,18 @@ public class PdfMonitor {
      * @throws InterruptedException
      */
     public synchronized void setDocuments(final List<PDDocument> docs) throws InterruptedException {
-        documents.addAll(docs);
+        final List<List<PDDocument>> subdocs = docs.stream().map(d -> {
+            final Splitter splitter = new Splitter();
+            splitter.setMemoryUsageSetting(MemoryUsageSetting.setupTempFileOnly());
+            splitter.setSplitAtPage(d.getNumberOfPages() / Model.AVAILABLE_PROCESSORS + 1);
+            try {
+                return splitter.split(d);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }).collect(Collectors.toList());
+        subdocs.forEach(l -> documents.addAll(l));
     }
 
     /**
@@ -47,12 +61,21 @@ public class PdfMonitor {
      * @throws IOException
      * @throws InterruptedException
      */
-    public synchronized PDDocument getDocumet() throws IOException, InterruptedException {
+    public synchronized PDDocument getDocument() throws IOException, InterruptedException {
         //If the document is not present then the computation is finished
         if(!documents.isEmpty()) {
             return documents.poll();
         } else {
             return null;
+        }
+    }
+
+    public synchronized Optional<PDDocument> getText() throws IOException, InterruptedException {
+        //If the document is not present then the computation is finished
+        if(!documents.isEmpty()) {
+            return Optional.of(documents.poll());
+        } else {
+            return Optional.empty();
         }
     }
 

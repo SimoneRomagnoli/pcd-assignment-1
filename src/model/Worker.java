@@ -54,9 +54,10 @@ public class Worker extends Thread {
                 }
             } else {
                 try {
-                    final PDDocument doc =  pdfMonitor.getDocumet();
-                    if (doc != null) {
-                        String text = this.stripper.getText(doc);
+                    //final PDDocument doc =  pdfMonitor.getDocument();
+                    final Optional<PDDocument> doc = pdfMonitor.getText();
+                    if (doc.isPresent()) {
+                        String text = this.stripper.getText(doc.get());
                         String[] splittedText = split(text);
                         Map<String, Integer> occurrences = count(filter(splittedText));
                         this.occurrencesMonitor.writeOccurrence(occurrences);
