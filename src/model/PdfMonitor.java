@@ -22,9 +22,11 @@ public class PdfMonitor {
     private static final int ZERO = 0;
 
     private Queue<PDDocument> documents;
+    private boolean documentsFinished;
 
     public PdfMonitor() throws IOException {
         this.documents = new ArrayDeque<>();
+        this.documentsFinished = false;
     }
 
     /**
@@ -36,19 +38,14 @@ public class PdfMonitor {
      *
      * @throws InterruptedException
      */
-    public synchronized void setDocuments(final List<PDDocument> docs) throws InterruptedException {
-        final List<List<PDDocument>> subdocs = docs.stream().map(d -> {
-            final Splitter splitter = new Splitter();
-            splitter.setMemoryUsageSetting(MemoryUsageSetting.setupTempFileOnly());
-            splitter.setSplitAtPage(d.getNumberOfPages() / Model.AVAILABLE_PROCESSORS + 1);
-            try {
-                return splitter.split(d);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }).collect(Collectors.toList());
-        subdocs.forEach(l -> documents.addAll(l));
+    public synchronized void setDocument(final PDDocument doc, final boolean lastDocument) throws InterruptedException, IOException {
+        this.documentsFinished = lastDocument;
+
+        final Splitter splitter = new Splitter();
+        splitter.setMemoryUsageSetting(MemoryUsageSetting.setupTempFileOnly());
+        splitter.setSplitAtPage(doc.getNumberOfPages() / Model.AVAILABLE_PROCESSORS + 1);
+        documents.addAll(splitter.split(doc));
+        notifyAll();
     }
 
     /**
@@ -62,6 +59,10 @@ public class PdfMonitor {
      * @throws InterruptedException
      */
     public synchronized PDDocument getDocument() throws IOException, InterruptedException {
+        while(documents.isEmpty() && !documentsFinished) {
+            wait();
+        }
+
         //If the document is not present then the computation is finished
         if(!documents.isEmpty()) {
             return documents.poll();
@@ -71,6 +72,10 @@ public class PdfMonitor {
     }
 
     public synchronized Optional<PDDocument> getText() throws IOException, InterruptedException {
+        while(documents.isEmpty() && !documentsFinished) {
+            wait();
+        }
+
         //If the document is not present then the computation is finished
         if(!documents.isEmpty()) {
             return Optional.of(documents.poll());

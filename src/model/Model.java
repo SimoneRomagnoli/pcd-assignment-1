@@ -20,7 +20,7 @@ public class Model {
     public static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
     private final List<ModelObserver> observers;
-    private final List<File> documents;
+    private final Queue<File> documents;
     private final List<String> ignoredWords;
     private int limitWords;
 
@@ -40,7 +40,7 @@ public class Model {
         this.stateMonitor = new StateMonitor();
         this.wordsMonitor = new ElaboratedWordsMonitor();
         this.workers = new ArrayList<>();
-        this.documents = new ArrayList<>();
+        this.documents = new ArrayDeque<>();
     }
 
     /**
@@ -51,30 +51,27 @@ public class Model {
      */
     public void update() throws InterruptedException, IOException {
         final long start = System.currentTimeMillis();
+        if(!documents.isEmpty()) {
 
-        List<PDDocument> pdfs = documents.stream().map(f-> {
             try {
-                PDDocument document = PDDocument.load(f);
+                PDDocument document = PDDocument.load(documents.poll());
                 AccessPermission ap = document.getCurrentAccessPermission();
                 if (!ap.canExtractContent()) {
                     throw new IOException("You do not have permission to extract text");
                 }
-                System.out.println("Processing file: " + f.getName());
-                return document;
+                //System.out.println("Processing file: " + f.getName());
+                this.pdfMonitor.setDocument(document, documents.isEmpty());
+
             } catch (IOException e) {
                 e.printStackTrace();
-                return null;
             }
-        }).collect(Collectors.toList());
 
-        this.pdfMonitor.setDocuments(pdfs);
+            System.out.println("time for loading pdf: " + (System.currentTimeMillis() - start) + " ms.");
+        } else {
 
-        System.out.println("time for loading pdfs : " + (System.currentTimeMillis() - start) + " ms.");
-
-        this.createWorkers(AVAILABLE_PROCESSORS);
-
-        for(Worker w : workers){
-            w.join();
+            for (Worker w : workers) {
+                w.join();
+            }
         }
     }
 

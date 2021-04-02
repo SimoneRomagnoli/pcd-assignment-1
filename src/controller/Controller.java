@@ -35,7 +35,7 @@ public class Controller {
             this.master = new Master(this.model);
             this.model.setArgs(pdfDirectoryName, ignoredWordsFileName, limitWords);
             this.master.start();
-           // this.model.createWorkers(AVAILABLE_PROCESSORS);
+            this.model.createWorkers(AVAILABLE_PROCESSORS);
             this.firstStart = false;
         }
         this.model.start();
