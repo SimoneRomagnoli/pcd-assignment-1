@@ -4,7 +4,10 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
 
 /**
  *  Monitor that handles only one PDF at a time:
@@ -15,18 +18,10 @@ public class PdfMonitor {
 
     private static final int ZERO = 0;
 
-    private Optional<PDDocument> document;
-    private final PDFTextStripper stripper;
-    private int workload;
-    private int threadID;
-    private boolean documentsFinished;
+    private Queue<PDDocument> documents;
 
     public PdfMonitor() throws IOException {
-        this.document = Optional.empty();
-        this.stripper = new PDFTextStripper();
-        this.stripper.setSortByPosition(true);
-        this.workload = ZERO;
-        this.threadID = ZERO;
+        this.documents = new ArrayDeque<>();
     }
 
     /**
@@ -35,20 +30,11 @@ public class PdfMonitor {
      * sets a new document for the workers that can take it and
      * do their work.
      *
-     * @param doc
-     * @param workload
-     * @param lastDocument
+     *
      * @throws InterruptedException
      */
-    public synchronized void setDocument(final PDDocument doc, final int workload, final boolean lastDocument) throws InterruptedException {
-        while(this.document.isPresent()) {
-            wait();
-        }
-        this.document = Optional.of(doc);
-        this.workload = workload;
-        this.threadID = ZERO;
-        this.documentsFinished = lastDocument;
-        notifyAll();
+    public synchronized void setDocuments(final List<PDDocument> docs) throws InterruptedException {
+        documents.addAll(docs);
     }
 
     /**
@@ -61,33 +47,12 @@ public class PdfMonitor {
      * @throws IOException
      * @throws InterruptedException
      */
-    public synchronized Optional<String> getText() throws IOException, InterruptedException {
-        //Workers exit this cycle either if a document is present,
-        //or there are no documents left (the last one has already been processed).
-        while(this.document.isEmpty() && !documentsFinished) {
-            wait();
-        }
-
+    public synchronized PDDocument getDocumet() throws IOException, InterruptedException {
         //If the document is not present then the computation is finished
-        if(document.isPresent()) {
-            PDDocument doc = document.get();
-            final int firstPage = workload * threadID + 1;
-            this.stripper.setStartPage(firstPage);
-            threadID++;
-            final int lastPage = workload * threadID;
-
-            //The last worker needs to remove the previous document
-            //in order to let the master give the new one
-            if (lastPage >= doc.getNumberOfPages()) {
-                this.stripper.setEndPage(doc.getNumberOfPages());
-                this.document = Optional.empty();
-                notifyAll();
-            } else {
-                this.stripper.setEndPage(lastPage);
-            }
-            return Optional.of(this.stripper.getText(doc));
+        if(!documents.isEmpty()) {
+            return documents.poll();
         } else {
-            return Optional.empty();
+            return null;
         }
     }
 

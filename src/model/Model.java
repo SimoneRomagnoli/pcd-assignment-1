@@ -17,8 +17,10 @@ import java.util.stream.Collectors;
  */
 public class Model {
 
+    public static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
+
     private final List<ModelObserver> observers;
-    private final Queue<File> documents;
+    private final List<File> documents;
     private final List<String> ignoredWords;
     private int limitWords;
 
@@ -38,7 +40,7 @@ public class Model {
         this.stateMonitor = new StateMonitor();
         this.wordsMonitor = new ElaboratedWordsMonitor();
         this.workers = new ArrayList<>();
-        this.documents = new ArrayDeque<>();
+        this.documents = new ArrayList<>();
     }
 
     /**
@@ -47,32 +49,32 @@ public class Model {
      * and their work.
      * @throws InterruptedException
      */
-    public void update() throws InterruptedException {
-        //If there are still documents to process,
-        //then take one of them and put it in the pdfMonitor,
-        //else wait for the workers to end their computation
-        if(!documents.isEmpty()) {
+    public void update() throws InterruptedException, IOException {
+        final long start = System.currentTimeMillis();
+
+        List<PDDocument> pdfs = documents.stream().map(f-> {
             try {
-                File f = documents.poll();
                 PDDocument document = PDDocument.load(f);
                 AccessPermission ap = document.getCurrentAccessPermission();
                 if (!ap.canExtractContent()) {
                     throw new IOException("You do not have permission to extract text");
                 }
                 System.out.println("Processing file: " + f.getName());
-                int workload = document.getNumberOfPages() % workers.size() == 0
-                        ? document.getNumberOfPages() / workers.size()
-                        : document.getNumberOfPages() / workers.size() + 1;
-
-                this.pdfMonitor.setDocument(document, workload, documents.isEmpty());
-
-            } catch (IOException | InterruptedException e) {
+                return document;
+            } catch (IOException e) {
                 e.printStackTrace();
+                return null;
             }
-        } else {
-            for(Worker w : workers){
-                w.join();
-            }
+        }).collect(Collectors.toList());
+
+        this.pdfMonitor.setDocuments(pdfs);
+
+        System.out.println("time for loading pdfs : " + (System.currentTimeMillis() - start) + " ms.");
+
+        this.createWorkers(AVAILABLE_PROCESSORS);
+
+        for(Worker w : workers){
+            w.join();
         }
     }
 
