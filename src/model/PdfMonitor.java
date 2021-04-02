@@ -19,6 +19,7 @@ public class PdfMonitor {
     private static final int ZERO = 0;
 
     private Queue<PDDocument> documents;
+    private Boolean documentsFinished = false;
 
     public PdfMonitor() throws IOException {
         this.documents = new ArrayDeque<>();
@@ -33,8 +34,14 @@ public class PdfMonitor {
      *
      * @throws InterruptedException
      */
-    public synchronized void setDocuments(final List<PDDocument> docs) throws InterruptedException {
-        documents.addAll(docs);
+//    public synchronized void setDocuments(final List<PDDocument> docs) throws InterruptedException {
+//        documents.addAll(docs);
+//        notifyAll();
+//    }
+    public synchronized void setDocuments(final PDDocument doc, Boolean documentsFinished) throws InterruptedException {
+        documents.add(doc);
+        this.documentsFinished = documentsFinished;
+        notifyAll();
     }
 
     /**
@@ -47,12 +54,18 @@ public class PdfMonitor {
      * @throws IOException
      * @throws InterruptedException
      */
-    public synchronized PDDocument getDocumet() throws IOException, InterruptedException {
+    public synchronized Optional<PDDocument> getDocument() throws IOException, InterruptedException {
+        //Workers exit this cycle either if a document is present,
+        //or there are no documents left (the last one has already been processed).
+        while(this.documents.isEmpty() && !documentsFinished) {
+            wait();
+        }
+
         //If the document is not present then the computation is finished
         if(!documents.isEmpty()) {
-            return documents.poll();
+            return Optional.of(documents.poll());
         } else {
-            return null;
+            return Optional.empty();
         }
     }
 
