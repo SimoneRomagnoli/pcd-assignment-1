@@ -14,8 +14,6 @@ import java.util.stream.Collectors;
  */
 public class Worker extends Thread {
 
-//    private static final String REGEX = "\\W+";
-    //regex della marta
     private static final String REGEX = "[^a-zA-Z0-9]";
 
     private final Model model;
@@ -54,14 +52,20 @@ public class Worker extends Thread {
                 }
             } else {
                 try {
-                    final Optional<PDDocument> doc =  pdfMonitor.getDocument();
-                    if (doc.isPresent()) {
-                        String text = this.stripper.getText(doc.get());
-                        doc.get().close();
+                    final Optional<PDDocument> document =  pdfMonitor.getDocument();
+                    if (document.isPresent()) {
+                        String text = this.stripper.getText(document.get());
+                        document.get().close();
                         String[] splittedText = split(text);
                         Map<String, Integer> occurrences = count(filter(splittedText));
+
+                        //Update occurrences monitor with found occurrences in pdf
                         this.occurrencesMonitor.writeOccurrence(occurrences);
+
+                        //Update words monitor with number of words in pdf
                         this.wordsMonitor.add(splittedText.length);
+
+                        //The worker updates the view in order to make it more responsive
                         this.model.notifyObservers();
                     } else {
                         stateMonitor.finish();
