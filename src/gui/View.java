@@ -76,7 +76,6 @@ public class View extends JFrame implements ActionListener, ModelObserver {
             dataset.clear();
             for (String word : occurrences.keySet().stream().sorted((a, b) -> occurrences.get(b) - occurrences.get(a)).collect(Collectors.toList())) {
                 acc += word + " - " + occurrences.get(word) + " times \n";
-                // aggiungo le top parole al chart
                 SwingUtilities.invokeLater(() -> {
 
                     this.dataset.addValue(occurrences.get(word), "row", word);
