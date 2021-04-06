@@ -83,14 +83,16 @@ public class Model {
 
     /**
      * Method called by the controller to create
-     * workers knowing the amount of available processors.
+     * workers knowing the amount of available processors, cpu usage and number of documents.
      *
      * @param n
      * @throws IOException
      */
-    public void createWorkers(final int n) throws IOException {
+    public void createWorkersUpTo(final int n) throws IOException {
+        final int numberOfWorkers = Math.min(n, documents.size());
+        System.out.println("Number of workers: "+numberOfWorkers);
         if(this.workers.isEmpty()) {
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < numberOfWorkers; i++) {
                 workers.add(new Worker(this, this.pdfMonitor, this.occurrencesMonitor, this.stateMonitor, this.wordsMonitor, this.ignoredWords));
             }
             this.workers.forEach(Worker::start);
