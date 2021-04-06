@@ -58,16 +58,19 @@ public class Worker extends Thread {
                         In order to update the gui more frequently, the amount of "work" is divided by 10.
                          */
                         int pages = doc.get().getNumberOfPages();
-                        int workload = pages / 10;
-                        int processed=0;
-                        for (int i = 0; i < doc.get().getNumberOfPages(); i += processed) {
-                            if(i==0 && pages%10 != 0 ){
-                                processed = workload + pages%10;
-                            }else{
-                                processed = workload;
+                        int chunks = pages < 20 ? 1 : 10;
+                        int chunkSize = pages / chunks;
+                        for (int i = 0; i < chunks; i++) {
+                            while(this.stateMonitor.isStopped()) {
+                                try {
+                                    Thread.sleep(100);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
                             }
-                            this.stripper.setStartPage(i+1);
-                            this.stripper.setEndPage(processed);
+                            this.stripper.setStartPage(i*chunkSize + 1);
+                            this.stripper.setEndPage(Math.min((i+1)*chunkSize, pages));
+
                             String text = this.stripper.getText(doc.get());
                             String[] splittedText = split(text);
                             Map<String, Integer> occurrences = count(filter(splittedText));

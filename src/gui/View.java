@@ -5,9 +5,7 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.ui.RefineryUtilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -96,7 +94,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         try {
             Object source = ev.getSource();
             if (this.start.equals(source)) {
-                this.controller.notifyStart(this.pdfDirectory.getText(), this.excludeWords.getText(), this.limitOfWords.getText());
+                this.controller.notifyStart(this.pdfDirectory.getText(), this.excludeWords.getText(), this.limitOfWords.getText(), this);
                 this.start.setEnabled(false);
                 this.stop.setEnabled(true);
                 this.pdfDirectory.setEnabled(false);
@@ -189,5 +187,10 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.chartPanel = new ChartPanel(barChart);
         this.chartPanel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.45), (int)(HEIGHT*0.5));
         this.add(chartPanel);
+    }
+
+    public void disableButtons() {
+        this.start.setEnabled(false);
+        this.stop.setEnabled(false);
     }
 }

@@ -30,7 +30,7 @@ public class Model {
 
     private final OccurrencesMonitor occurrencesMonitor;
 
-    public Model() throws IOException {
+    public Model() {
         this.observers = new ArrayList<>();
         this.ignoredWords = new ArrayList<>();
         this.pdfMonitor = new PdfMonitor();
@@ -48,7 +48,6 @@ public class Model {
      * @throws InterruptedException
      */
     public void update() throws InterruptedException, IOException {
-
         if (!this.documents.isEmpty()){
             File f = documents.poll();
             PDDocument doc = PDDocument.load(f);
@@ -59,7 +58,7 @@ public class Model {
             System.out.println("Processing file: " + f.getName());
 
             this.pdfMonitor.setDocuments(doc, this.documents.isEmpty());
-        }else{
+        } else {
             for(Worker w : workers){
                 w.join();
             }

@@ -1,5 +1,6 @@
 package controller;
 
+import gui.View;
 import model.*;
 import java.io.IOException;
 
@@ -30,9 +31,9 @@ public class Controller {
      * @param limitWords
      * @throws IOException
      */
-    public void notifyStart(final String pdfDirectoryName, final String ignoredWordsFileName, final String limitWords) throws IOException {
+    public void notifyStart(final String pdfDirectoryName, final String ignoredWordsFileName, final String limitWords, final View view) throws IOException {
         if(this.firstStart) {
-            this.master = new Master(this.model);
+            this.master = new Master(this.model, view);
             this.model.setArgs(pdfDirectoryName, ignoredWordsFileName, limitWords);
             this.master.start();
             this.model.createWorkers(AVAILABLE_PROCESSORS);

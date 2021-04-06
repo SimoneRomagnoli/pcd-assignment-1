@@ -1,11 +1,9 @@
 package model;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 
@@ -16,12 +14,10 @@ import java.util.Queue;
  */
 public class PdfMonitor {
 
-    private static final int ZERO = 0;
-
-    private Queue<PDDocument> documents;
+    private final Queue<PDDocument> documents;
     private Boolean documentsFinished = false;
 
-    public PdfMonitor() throws IOException {
+    public PdfMonitor() {
         this.documents = new ArrayDeque<>();
     }
 
@@ -34,15 +30,11 @@ public class PdfMonitor {
      *
      * @throws InterruptedException
      */
-//    public synchronized void setDocuments(final List<PDDocument> docs) throws InterruptedException {
-//        documents.addAll(docs);
-//        notifyAll();
-//    }
-    public synchronized void setDocuments(final PDDocument doc, Boolean documentsFinished) throws InterruptedException {
-        documents.add(doc);
-        this.documentsFinished = documentsFinished;
-        notifyAll();
-    }
+     public synchronized void setDocuments(final PDDocument doc, Boolean documentsFinished) throws InterruptedException {
+         documents.add(doc);
+         this.documentsFinished = documentsFinished;
+         notifyAll();
+     }
 
     /**
      *
