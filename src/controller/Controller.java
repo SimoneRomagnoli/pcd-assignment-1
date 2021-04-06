@@ -12,7 +12,7 @@ import java.io.IOException;
 public class Controller {
 
     public static final int N_CPU = Runtime.getRuntime().availableProcessors();
-    public static final double U_CPU = 0.8;
+    public static final double U_CPU = 0.5;
     public static final double WAIT_COMPUTE_RATIO = 0.85;
     public static final int N_THREADS =  (int)(N_CPU * U_CPU * (1 + WAIT_COMPUTE_RATIO));
 

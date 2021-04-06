@@ -1,4 +1,4 @@
---------------------------- MODULE step5_porject ---------------------------
+--------------------------- MODULE project_master_worker_old_version ---------------------------
 
 EXTENDS TLC, Integers, Sequences
 CONSTANTS NUMBER_OF_WORKERS, TOTAL_PDF
