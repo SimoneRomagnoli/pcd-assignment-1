@@ -9,13 +9,11 @@ import java.util.stream.Collectors;
 
 /**
  * Worker thread:
- * it takes a portion of a pdf
- * and completes the "split", "filter", and "count" tasks
+ * it takes a pdf, extract the text with the "strip"
+ * and complete the computation by doing "split", "filter", and "count" tasks
  */
 public class Worker extends Thread {
 
-//    private static final String REGEX = "\\W+";
-    //regex della marta
     private static final String REGEX = "[^a-zA-Z0-9]";
 
     private final Model model;
@@ -56,13 +54,28 @@ public class Worker extends Thread {
                 try {
                     final Optional<PDDocument> doc =  pdfMonitor.getDocument();
                     if (doc.isPresent()) {
-                        String text = this.stripper.getText(doc.get());
+                        /*
+                        In order to update the gui more frequently, the amount of "work" is divided by 10.
+                         */
+                        int pages = doc.get().getNumberOfPages();
+                        int workload = pages / 10;
+                        int processed=0;
+                        for (int i = 0; i < doc.get().getNumberOfPages(); i += processed) {
+                            if(i==0 && pages%10 != 0 ){
+                                processed = workload + pages%10;
+                            }else{
+                                processed = workload;
+                            }
+                            this.stripper.setStartPage(i+1);
+                            this.stripper.setEndPage(processed);
+                            String text = this.stripper.getText(doc.get());
+                            String[] splittedText = split(text);
+                            Map<String, Integer> occurrences = count(filter(splittedText));
+                            this.occurrencesMonitor.writeOccurrence(occurrences);
+                            this.wordsMonitor.add(splittedText.length);
+                            this.model.notifyObservers();
+                        }
                         doc.get().close();
-                        String[] splittedText = split(text);
-                        Map<String, Integer> occurrences = count(filter(splittedText));
-                        this.occurrencesMonitor.writeOccurrence(occurrences);
-                        this.wordsMonitor.add(splittedText.length);
-                        this.model.notifyObservers();
                     } else {
                         stateMonitor.finish();
                     }
