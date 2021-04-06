@@ -94,7 +94,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         try {
             Object source = ev.getSource();
             if (this.start.equals(source)) {
-                this.controller.notifyStart(this.pdfDirectory.getText(), this.excludeWords.getText(), this.limitOfWords.getText());
+                this.controller.notifyStart(this.pdfDirectory.getText(), this.excludeWords.getText(), this.limitOfWords.getText(), this);
                 this.start.setEnabled(false);
                 this.stop.setEnabled(true);
                 this.pdfDirectory.setEnabled(false);
@@ -187,5 +187,10 @@ public class View extends JFrame implements ActionListener, ModelObserver {
         this.chartPanel = new ChartPanel(barChart);
         this.chartPanel.setBounds((int)(WIDTH*0.5), (int)(HEIGHT*0.1), (int)(WIDTH*0.45), (int)(HEIGHT*0.5));
         this.add(chartPanel);
+    }
+
+    public void disableButtons() {
+        this.start.setEnabled(false);
+        this.stop.setEnabled(false);
     }
 }

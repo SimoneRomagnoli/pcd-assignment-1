@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 
 /**
  * Worker thread:
- * it takes a portion of a pdf
- * and completes the "split", "filter", and "count" tasks
+ * it takes a pdf, extract the text with the "strip"
+ * and complete the computation by doing "split", "filter", and "count" tasks
  */
 public class Worker extends Thread {
 
@@ -52,21 +52,33 @@ public class Worker extends Thread {
                 }
             } else {
                 try {
-                    final Optional<PDDocument> document =  pdfMonitor.getDocument();
-                    if (document.isPresent()) {
-                        String text = this.stripper.getText(document.get());
-                        document.get().close();
-                        String[] splittedText = split(text);
-                        Map<String, Integer> occurrences = count(filter(splittedText));
+                    final Optional<PDDocument> doc =  pdfMonitor.getDocument();
+                    if (doc.isPresent()) {
+                        /*
+                        In order to update the gui more frequently, the amount of "work" is divided by 10.
+                         */
+                        int pages = doc.get().getNumberOfPages();
+                        int chunks = pages < 20 ? 1 : 10;
+                        int chunkSize = pages / chunks;
+                        for (int i = 0; i < chunks; i++) {
+                            while(this.stateMonitor.isStopped()) {
+                                try {
+                                    Thread.sleep(100);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            this.stripper.setStartPage(i*chunkSize + 1);
+                            this.stripper.setEndPage(Math.min((i+1)*chunkSize, pages));
 
-                        //Update occurrences monitor with found occurrences in pdf
-                        this.occurrencesMonitor.writeOccurrence(occurrences);
-
-                        //Update words monitor with number of words in pdf
-                        this.wordsMonitor.add(splittedText.length);
-
-                        //The worker updates the view in order to make it more responsive
-                        this.model.notifyObservers();
+                            String text = this.stripper.getText(doc.get());
+                            String[] splittedText = split(text);
+                            Map<String, Integer> occurrences = count(filter(splittedText));
+                            this.occurrencesMonitor.writeOccurrence(occurrences);
+                            this.wordsMonitor.add(splittedText.length);
+                            this.model.notifyObservers();
+                        }
+                        doc.get().close();
                     } else {
                         stateMonitor.finish();
                     }

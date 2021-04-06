@@ -1,5 +1,7 @@
 package model;
 
+import gui.View;
+
 /**
  * Master thread of the program:
  * it updates the model until the computation is finished
@@ -7,9 +9,11 @@ package model;
  */
 public class Master extends Thread {
     final private Model model;
+    final private View view;
 
-    public Master(Model model){
+    public Master(Model model, View view){
         this.model = model;
+        this.view = view;
     }
 
     public void run(){
@@ -24,6 +28,7 @@ public class Master extends Thread {
                 e.printStackTrace();
             }
         }
+        this.view.disableButtons();
         System.out.println("Total time: "+(System.currentTimeMillis()-start)+" ms.");
     }
 }
