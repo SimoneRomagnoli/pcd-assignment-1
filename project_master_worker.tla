@@ -75,7 +75,7 @@ startWhile:
             wait(pdfMonitorFree);
     
         waitForFullMonitor:
-        while pdfMonitor = <<>> /\ current_pdf_number < TOTAL_PDF do
+        while pdfMonitor = <<>> /\ last_pdf = 0 do
             
             wakeOthers:
             signal(pdfMonitorFree);
@@ -116,7 +116,7 @@ startWhile:
     end while;
 end process;
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "aaa125dd" /\ chksum(tla) = "7ed9ae31")
+\* BEGIN TRANSLATION (chksum(pcal) = "36d48a71" /\ chksum(tla) = "fd320a9a")
 \* Label evaluateWhile of process master at line 37 col 3 changed to evaluateWhile_
 VARIABLES pdfMonitor, stateMonitor, pdfMonitorFree, stateMonitorFree, 
           current_pdf_number, last_pdf, pc
@@ -230,7 +230,7 @@ getCurrentDocument(self) == /\ pc[self] = "getCurrentDocument"
                                             state >>
 
 waitForFullMonitor(self) == /\ pc[self] = "waitForFullMonitor"
-                            /\ IF pdfMonitor = <<>> /\ current_pdf_number < TOTAL_PDF
+                            /\ IF pdfMonitor = <<>> /\ last_pdf = 0
                                   THEN /\ pc' = [pc EXCEPT ![self] = "wakeOthers"]
                                   ELSE /\ pc' = [pc EXCEPT ![self] = "dequeueMonitor"]
                             /\ UNCHANGED << pdfMonitor, stateMonitor, 
