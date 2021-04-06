@@ -16,6 +16,7 @@ public class PdfMonitor {
 
     private final Queue<PDDocument> documents;
     private Boolean documentsFinished = false;
+    private long waitTime = 0;
 
     public PdfMonitor() {
         this.documents = new ArrayDeque<>();
@@ -50,13 +51,16 @@ public class PdfMonitor {
         //Workers exit this cycle either if a document is present,
         //or there are no documents left (the last one has already been processed).
         while(this.documents.isEmpty() && !documentsFinished) {
+            final long startWait = System.currentTimeMillis();
             wait();
+            this.waitTime += System.currentTimeMillis() - startWait;
         }
 
         //If the document is not present then the computation is finished
         if(!documents.isEmpty()) {
             return Optional.of(documents.poll());
         } else {
+            System.out.println("Total waiting time: "+waitTime+" ms.");
             return Optional.empty();
         }
     }

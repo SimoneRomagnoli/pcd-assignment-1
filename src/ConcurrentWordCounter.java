@@ -8,7 +8,7 @@ import java.io.IOException;
  * Main of the program:
  * it is structured with an MVC architecture.
  */
-public class SequentialWordCounter {
+public class ConcurrentWordCounter {
 
     public static void main(String[] args) throws IOException {
         final Model model = new Model();

@@ -11,7 +11,10 @@ import java.io.IOException;
  */
 public class Controller {
 
-    public static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
+    public static final int N_CPU = Runtime.getRuntime().availableProcessors();
+    public static final double U_CPU = 0.8;
+    public static final double WAIT_COMPUTE_RATIO = 0.85;
+    public static final int N_THREADS =  (int)(N_CPU * U_CPU * (1 + WAIT_COMPUTE_RATIO));
 
     private final Model model;
 
@@ -36,7 +39,8 @@ public class Controller {
             this.master = new Master(this.model, view);
             this.model.setArgs(pdfDirectoryName, ignoredWordsFileName, limitWords);
             this.master.start();
-            this.model.createWorkers(AVAILABLE_PROCESSORS);
+            System.out.println("Number of workers: "+N_THREADS);
+            this.model.createWorkers(N_THREADS);
             this.firstStart = false;
         }
         this.model.start();

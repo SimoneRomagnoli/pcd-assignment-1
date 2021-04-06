@@ -112,7 +112,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     }
 
     private void createDirectoryInput() {
-        this.dirLabel = new JLabel("Select the directory containing your PDFs:");
+        this.dirLabel = new JLabel("Directory with PDFs:");
         this.dirLabel.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.025), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.pdfDirectory = new JTextField(10);
         this.pdfDirectory.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.1), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
@@ -122,7 +122,7 @@ public class View extends JFrame implements ActionListener, ModelObserver {
     }
 
     private void createExcludedInput() {
-        this.excLabel = new JLabel("Select the file containing excluded words:");
+        this.excLabel = new JLabel("File with excluded words:");
         this.excLabel.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.225), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
         this.excludeWords = new JTextField(10);
         this.excludeWords.setBounds((int)(HEIGHT*0.05), (int)(HEIGHT*0.3), (int)(WIDTH*0.2), (int)(HEIGHT*0.1));
